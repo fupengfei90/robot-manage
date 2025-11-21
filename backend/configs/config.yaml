@@ -1,0 +1,25 @@
+app:
+  name: robot-manage
+  env: local
+  version: 0.1.0
+  http:
+    host: 0.0.0.0
+    port: 8080
+database:
+  driver: mysql
+  dsn: xedv:Xedv@2024@tcp(9.134.95.57:3306)/xedv?charset=utf8mb4&parseTime=True&loc=Local
+redis:
+  addr: localhost:6379
+  db: 0
+task_queue:
+  redis_dsn: redis://localhost:6379
+  concurrency: 5
+vector_store:
+  provider: chroma
+  endpoint: http://localhost:8000
+logging:
+  level: info
+  encoding: console
+  filename: logs/app.log
+security:
+  jwt_secret: change-me
