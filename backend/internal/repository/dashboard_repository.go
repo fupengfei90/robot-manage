@@ -33,20 +33,28 @@ func (r *DashboardRepository) FetchSummary() (*model.DashboardSummary, error) {
 	}
 
 	err := r.db.Transaction(func(tx *gorm.DB) error {
-		type serviceStat struct {
-			Period string
-			Count  int
-		}
-		var stats []serviceStat
-		if err := tx.Table("ops_service_stats").Select("period,count").Where("metric = ?", "service_count").Find(&stats).Error; err != nil {
-			return err
-		}
-		for _, stat := range stats {
-			summary.ServiceCounts[strings.ToLower(stat.Period)] = stat.Count
-		}
+		// 使用真实数据统计服务次数（包括定时任务，排除无效数据）
+		now := time.Now()
+		today := now.Format("2006-01-02")
+		weekAgo := now.AddDate(0, 0, -7).Format("2006-01-02")
+		monthAgo := now.AddDate(0, -1, 0).Format("2006-01-02")
+		yearAgo := now.AddDate(-1, 0, 0).Format("2006-01-02")
 
-		if err := tx.Table("ops_user_profile").Select("COUNT(1)").Scan(&summary.UserCount).Error; err != nil {
-			return err
+		var dailyCount, weeklyCount, monthlyCount, yearlyCount int64
+		tx.Table("wecom_message_records").Where("DATE(created_at) = ? AND (is_valid = 1 OR is_valid IS NULL)", today).Count(&dailyCount)
+		tx.Table("wecom_message_records").Where("DATE(created_at) >= ? AND (is_valid = 1 OR is_valid IS NULL)", weekAgo).Count(&weeklyCount)
+		tx.Table("wecom_message_records").Where("DATE(created_at) >= ? AND (is_valid = 1 OR is_valid IS NULL)", monthAgo).Count(&monthlyCount)
+		tx.Table("wecom_message_records").Where("DATE(created_at) >= ? AND (is_valid = 1 OR is_valid IS NULL)", yearAgo).Count(&yearlyCount)
+
+		summary.ServiceCounts["daily"] = int(dailyCount)
+		summary.ServiceCounts["weekly"] = int(weeklyCount)
+		summary.ServiceCounts["monthly"] = int(monthlyCount)
+		summary.ServiceCounts["yearly"] = int(yearlyCount)
+
+		// 用户数统计，从RBAC用户表获取
+		var userCount int64
+		if err := tx.Table("rbac_users").Count(&userCount).Error; err == nil {
+			summary.UserCount = int(userCount)
 		}
 
 		summary.Inspection.Detail = map[string]int{}
@@ -55,10 +63,9 @@ func (r *DashboardRepository) FetchSummary() (*model.DashboardSummary, error) {
 			Value   int
 			Segment string
 		}
+		// 巡检数据，失败不影响服务次数
 		var inspectionRows []metricRow
-		if err := tx.Table("ops_inspection_trend").Select("label,value,segment").Order("sequence asc").Find(&inspectionRows).Error; err != nil {
-			return err
-		}
+		tx.Table("ops_inspection_trend").Select("label,value,segment").Order("sequence asc").Find(&inspectionRows)
 		for _, row := range inspectionRows {
 			summary.Inspection.Trend = append(summary.Inspection.Trend, row.Value)
 			summary.Inspection.Labels = append(summary.Inspection.Labels, row.Label)
@@ -68,11 +75,10 @@ func (r *DashboardRepository) FetchSummary() (*model.DashboardSummary, error) {
 			}
 		}
 
+		// 告警数据，失败不影响服务次数
 		summary.Alerts.Detail = map[string]int{}
 		var alertRows []metricRow
-		if err := tx.Table("ops_alert_metrics").Select("label,value,segment").Order("severity asc").Find(&alertRows).Error; err != nil {
-			return err
-		}
+		tx.Table("ops_alert_metrics").Select("label,value,segment").Order("severity asc").Find(&alertRows)
 		for _, row := range alertRows {
 			summary.Alerts.Trend = append(summary.Alerts.Trend, row.Value)
 			summary.Alerts.Labels = append(summary.Alerts.Labels, row.Label)

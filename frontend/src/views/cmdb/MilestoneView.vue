@@ -33,6 +33,9 @@
             clearable
           />
         </el-form-item>
+        <el-form-item label="事件内容">
+          <el-input v-model="filters.eventContent" placeholder="搜索事件内容" clearable style="width: 200px" />
+        </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="filters.isActive" placeholder="全部" clearable style="width: 120px">
             <el-option label="激活" :value="true" />
@@ -183,6 +186,7 @@ const formRef = ref<FormInstance>()
 const filters = reactive({
   startDate: '',
   endDate: '',
+  eventContent: '',
   isActive: undefined as boolean | undefined
 })
 
@@ -217,6 +221,7 @@ const loadData = async () => {
     const res = await getMilestoneEvents({
       startDate: filters.startDate || undefined,
       endDate: filters.endDate || undefined,
+      eventContent: filters.eventContent || undefined,
       isActive: filters.isActive,
       page: pagination.page,
       pageSize: pagination.pageSize
@@ -240,6 +245,7 @@ const handleSearch = () => {
 const handleReset = () => {
   filters.startDate = ''
   filters.endDate = ''
+  filters.eventContent = ''
   filters.isActive = undefined
   handleSearch()
 }
@@ -358,25 +364,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-lg);
-  margin-bottom: var(--spacing-md);
   border-radius: var(--radius-xl);
-}
-
-.view-title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  background: var(--gradient-accent);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 0;
-}
-
-.view-subtitle {
-  font-size: 0.875rem;
-  color: var(--text-muted);
-  margin-top: var(--spacing-xs);
 }
 
 .create-btn {
@@ -385,7 +373,7 @@ onMounted(() => {
 }
 
 .filter-card {
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
   border-radius: var(--radius-xl);
 }
 

@@ -15,22 +15,24 @@
     </div>
 
     <div class="panel__metrics">
-      <div 
-        v-for="(value, key) in summary.serviceCounts" 
-        :key="key" 
-        class="metric card-hover"
-        :style="{ animationDelay: `${parseInt(key) * 0.1}s` }"
+      <el-tooltip
+        v-for="key in serviceOrder" 
+        :key="key"
+        :content="getTimeRange(key)"
+        placement="top"
       >
-        <div class="metric__icon">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2" fill="none"/>
-          </svg>
+        <div class="metric card-hover">
+          <div class="metric__icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2" fill="none"/>
+            </svg>
+          </div>
+          <div class="metric__content">
+            <p class="metric__label">{{ serviceDict[key as keyof typeof serviceDict] }}</p>
+            <p class="metric__value">{{ summary.serviceCounts[key]?.toLocaleString() || 0 }}</p>
+          </div>
         </div>
-        <div class="metric__content">
-          <p class="metric__label">{{ serviceDict[key as keyof typeof serviceDict] }}</p>
-          <p class="metric__value">{{ value.toLocaleString() }}</p>
-        </div>
-      </div>
+      </el-tooltip>
       <div class="metric metric--highlight card-hover">
         <div class="metric__icon metric__icon--highlight">
           <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -76,12 +78,48 @@ const axisLabelColor = computed(() => {
   return themeStore.mode === 'dark' ? '#94a3b8' : '#64748b'
 })
 
+const serviceOrder = ['daily', 'weekly', 'monthly', 'yearly']
+
 const serviceDict = computed(() => ({
   daily: t('dashboard.metrics.daily'),
   weekly: t('dashboard.metrics.weekly'),
   monthly: t('dashboard.metrics.monthly'),
   yearly: t('dashboard.metrics.yearly')
 }))
+
+const getTimeRange = (key: string) => {
+  const now = new Date()
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+  
+  const today = formatDate(now)
+  
+  switch(key) {
+    case 'daily':
+      return `统计时间: ${today}`
+    case 'weekly': {
+      const weekAgo = new Date(now)
+      weekAgo.setDate(weekAgo.getDate() - 7)
+      return `统计时间: ${formatDate(weekAgo)} ~ ${today}`
+    }
+    case 'monthly': {
+      const monthAgo = new Date(now)
+      monthAgo.setMonth(monthAgo.getMonth() - 1)
+      return `统计时间: ${formatDate(monthAgo)} ~ ${today}`
+    }
+    case 'yearly': {
+      const yearAgo = new Date(now)
+      yearAgo.setFullYear(yearAgo.getFullYear() - 1)
+      return `统计时间: ${formatDate(yearAgo)} ~ ${today}`
+    }
+    default:
+      return ''
+  }
+}
 
 const initCharts = () => {
   if (inspectionRef.value) {
@@ -371,7 +409,7 @@ watch(
 
 .panel__metrics {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: var(--spacing-md);
   margin: var(--spacing-xl) 0;
 }
@@ -459,14 +497,15 @@ watch(
 }
 
 .metric__value {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-primary);
-  line-height: 1.2;
+  line-height: 1.3;
   background: var(--gradient-accent);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  word-break: break-all;
 }
 
 .metric--highlight .metric__value {

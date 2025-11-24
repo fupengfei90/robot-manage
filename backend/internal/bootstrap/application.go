@@ -82,7 +82,23 @@ func Build(configPath string) (*Application, error) {
 	cmdbSvc := service.NewCMDBService(cmdbRepo)
 	cmdbHandler := handler.NewCMDBHandler(cmdbSvc)
 
-	httpServer := server.New(cfg, dashboardHandler, cmdbHandler)
+	authRepo := repository.NewAuthRepository(app.DB)
+	authSvc := service.NewAuthService(authRepo, cfg)
+	authHandler := handler.NewAuthHandler(authSvc)
+
+	scheduleTaskRepo := repository.NewScheduleTaskRepository(app.DB)
+	scheduleTaskSvc := service.NewScheduleTaskService(scheduleTaskRepo)
+	scheduleTaskHandler := handler.NewScheduleTaskHandler(scheduleTaskSvc)
+
+	rbacRepo := repository.NewRBACRepository(app.DB)
+	rbacSvc := service.NewRBACService(rbacRepo)
+	rbacHandler := handler.NewRBACHandler(rbacSvc)
+
+	digitalEmployeeRepo := repository.NewDigitalEmployeeRepository(app.DB)
+	digitalEmployeeSvc := service.NewDigitalEmployeeService(digitalEmployeeRepo)
+	digitalEmployeeHandler := handler.NewDigitalEmployeeHandler(digitalEmployeeSvc)
+
+	httpServer := server.New(cfg, dashboardHandler, cmdbHandler, authHandler, scheduleTaskHandler, rbacHandler, digitalEmployeeHandler)
 
 	app.Server = httpServer
 

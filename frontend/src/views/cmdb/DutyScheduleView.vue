@@ -2,11 +2,11 @@
   <div class="duty-schedule-view">
     <div class="view-header glass-effect animate-fade-in-down">
       <div class="header-content">
-        <h1 class="view-title">值班排班管理</h1>
-        <p class="view-subtitle">管理WB和FB值班人员排班信息</p>
+        <h1 class="view-title">值班管理</h1>
+        <p class="view-subtitle">管理WB和FB值班人员信息</p>
       </div>
       <el-button type="primary" @click="handleCreate" class="create-btn hover-lift">
-        <span>➕</span> 新增排班
+        <span>➕</span> 新增值班
       </el-button>
     </div>
 
@@ -33,6 +33,9 @@
             clearable
           />
         </el-form-item>
+        <el-form-item label="值班人">
+          <el-input v-model="filters.staffName" placeholder="输入值班人姓名" clearable style="width: 150px" />
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
@@ -57,7 +60,7 @@
         </el-table-column>
         <el-table-column prop="wbStaffName" label="WB值班人员" min-width="200">
           <template #default="{ row }">
-            <el-tag type="info" class="staff-tag">{{ row.wbStaffName }}</el-tag>
+            <el-tag type="primary" class="staff-tag">{{ row.wbStaffName }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="fbStaffName" label="FB值班人员" min-width="200">
@@ -158,7 +161,8 @@ const formRef = ref<FormInstance>()
 
 const filters = reactive({
   startDate: '',
-  endDate: ''
+  endDate: '',
+  staffName: ''
 })
 
 const pagination = reactive({
@@ -181,7 +185,7 @@ const formRules: FormRules = {
   fbStaffName: [{ required: true, message: '请输入FB值班人员姓名', trigger: 'blur' }]
 }
 
-const dialogTitle = computed(() => (isEdit.value ? '编辑排班' : '新增排班'))
+const dialogTitle = computed(() => (isEdit.value ? '编辑值班' : '新增值班'))
 
 // 加载数据
 const loadData = async () => {
@@ -190,6 +194,7 @@ const loadData = async () => {
     const res = await getDutySchedules({
       startDate: filters.startDate || undefined,
       endDate: filters.endDate || undefined,
+      staffName: filters.staffName || undefined,
       page: pagination.page,
       pageSize: pagination.pageSize
     })
@@ -212,6 +217,7 @@ const handleSearch = () => {
 const handleReset = () => {
   filters.startDate = ''
   filters.endDate = ''
+  filters.staffName = ''
   handleSearch()
 }
 
@@ -239,7 +245,7 @@ const handleEdit = (row: DutySchedule) => {
 const handleDelete = async (row: DutySchedule) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除 ${row.dutyDate} 的排班记录吗？`,
+      `确定要删除 ${row.dutyDate} 的值班记录吗？`,
       '确认删除',
       {
         confirmButtonText: '确定',
@@ -329,25 +335,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-lg);
-  margin-bottom: var(--spacing-md);
   border-radius: var(--radius-xl);
-}
-
-.view-title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  background: var(--gradient-accent);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 0;
-}
-
-.view-subtitle {
-  font-size: 0.875rem;
-  color: var(--text-muted);
-  margin-top: var(--spacing-xs);
 }
 
 .create-btn {
@@ -356,7 +344,7 @@ onMounted(() => {
 }
 
 .filter-card {
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
   border-radius: var(--radius-xl);
 }
 

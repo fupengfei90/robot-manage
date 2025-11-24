@@ -1,0 +1,8 @@
+# 忽略不需要的文件
+.git
+.gitignore
+*.md
+node_modules
+dist
+.env
+.DS_Store

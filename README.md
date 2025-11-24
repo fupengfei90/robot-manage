@@ -33,6 +33,21 @@ robot-manage
 
 ## 快速开始
 
+### 方式一：Docker 容器化部署（推荐）
+
+```bash
+# 一键部署
+./deploy.sh
+
+# 访问应用
+# 前端: http://localhost
+# 后端: http://localhost:8088
+```
+
+详细说明请查看 [Docker 部署文档](./DOCKER_DEPLOY.md)
+
+### 方式二：本地开发
+
 ```bash
 # 后端
 cd backend
@@ -46,7 +61,7 @@ npm install
 npm run dev
 ```
 
-Vite dev server 已配置 `http://localhost:8080` 代理，生产环境通过 Nginx 转发 `/api`.
+Vite dev server 已配置 `http://localhost:8088` 代理，生产环境通过 Nginx 转发 `/api`.
 
 ## API 约定
 

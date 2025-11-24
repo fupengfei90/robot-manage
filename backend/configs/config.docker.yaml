@@ -1,0 +1,25 @@
+app:
+  name: robot-manage
+  env: ${APP_ENV:production}
+  version: 0.1.0
+  http:
+    host: 0.0.0.0
+    port: 8088
+database:
+  driver: mysql
+  dsn: ${DB_USER:xedv}:${DB_PASSWORD:Xedv@2024}@tcp(${DB_HOST:mysql}:${DB_PORT:3306})/${DB_NAME:xedv}?charset=utf8mb4&parseTime=True&loc=Local
+redis:
+  addr: ${REDIS_ADDR:redis:6379}
+  db: 0
+task_queue:
+  redis_dsn: redis://${REDIS_ADDR:redis:6379}
+  concurrency: 5
+vector_store:
+  provider: chroma
+  endpoint: http://chroma:8000
+logging:
+  level: info
+  encoding: json
+  filename: logs/app.log
+security:
+  jwt_secret: ${JWT_SECRET:change-me}

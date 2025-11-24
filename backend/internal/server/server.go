@@ -16,8 +16,8 @@ type Server struct {
 }
 
 // New 根据配置创建Server。
-func New(cfg *config.AppConfig, dashboardHandler *handler.DashboardHandler, cmdbHandler *handler.CMDBHandler) *Server {
-	router := NewRouter(cfg, dashboardHandler, cmdbHandler)
+func New(cfg *config.AppConfig, dashboardHandler *handler.DashboardHandler, cmdbHandler *handler.CMDBHandler, authHandler *handler.AuthHandler, scheduleTaskHandler *handler.ScheduleTaskHandler, rbacHandler *handler.RBACHandler, digitalEmployeeHandler *handler.DigitalEmployeeHandler) *Server {
+	router := NewRouter(cfg, dashboardHandler, cmdbHandler, authHandler, scheduleTaskHandler, rbacHandler, digitalEmployeeHandler)
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("%s:%d", cfg.App.HTTP.Host, cfg.App.HTTP.Port),

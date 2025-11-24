@@ -26,3 +26,39 @@ func Error(c *gin.Context, code int, message string) {
 		Data:    nil,
 	})
 }
+
+// BadRequest 返回400错误响应。
+func BadRequest(c *gin.Context, message string, detail string) {
+	c.JSON(400, StandardResponse[any]{
+		Code:    400,
+		Message: message + ": " + detail,
+		Data:    nil,
+	})
+}
+
+// NotFound 返回404错误响应。
+func NotFound(c *gin.Context, message string, detail string) {
+	c.JSON(404, StandardResponse[any]{
+		Code:    404,
+		Message: message + ": " + detail,
+		Data:    nil,
+	})
+}
+
+// InternalServerError 返回500错误响应。
+func InternalServerError(c *gin.Context, message string, detail string) {
+	c.JSON(500, StandardResponse[any]{
+		Code:    500,
+		Message: message + ": " + detail,
+		Data:    nil,
+	})
+}
+
+// Created 返回201创建成功响应。
+func Created[T any](c *gin.Context, data T) {
+	c.JSON(201, StandardResponse[T]{
+		Code:    0,
+		Message: "created",
+		Data:    data,
+	})
+}

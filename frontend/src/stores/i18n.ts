@@ -19,7 +19,7 @@ const translations: Record<Locale, Translations> = {
       system: '系统管理',
       toggleTheme: '切换主题',
       toggleLanguage: '切换语言',
-      dutySchedule: '值班排班',
+      dutySchedule: '值班管理',
       milestone: '大事记'
     },
     // Dashboard

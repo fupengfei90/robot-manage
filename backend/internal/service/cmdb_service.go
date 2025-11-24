@@ -21,7 +21,7 @@ func NewCMDBService(repo *repository.CMDBRepository) *CMDBService {
 // ========== 值班排班相关 ==========
 
 // GetDutySchedules 获取值班排班列表
-func (s *CMDBService) GetDutySchedules(startDate, endDate string, page, pageSize int) ([]model.DutySchedule, int64, error) {
+func (s *CMDBService) GetDutySchedules(startDate, endDate, staffName string, page, pageSize int) ([]model.DutySchedule, int64, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -29,7 +29,7 @@ func (s *CMDBService) GetDutySchedules(startDate, endDate string, page, pageSize
 		pageSize = 20
 	}
 	offset := (page - 1) * pageSize
-	return s.repo.GetDutySchedules(startDate, endDate, pageSize, offset)
+	return s.repo.GetDutySchedules(startDate, endDate, staffName, pageSize, offset)
 }
 
 // GetDutyScheduleByID 根据ID获取值班排班
@@ -100,7 +100,7 @@ func (s *CMDBService) DeleteDutySchedule(id int) error {
 // ========== 大事记相关 ==========
 
 // GetMilestoneEvents 获取大事记列表
-func (s *CMDBService) GetMilestoneEvents(startDate, endDate string, isActive *bool, page, pageSize int) ([]model.MilestoneEvent, int64, error) {
+func (s *CMDBService) GetMilestoneEvents(startDate, endDate, eventContent string, isActive *bool, page, pageSize int) ([]model.MilestoneEvent, int64, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -108,7 +108,7 @@ func (s *CMDBService) GetMilestoneEvents(startDate, endDate string, isActive *bo
 		pageSize = 20
 	}
 	offset := (page - 1) * pageSize
-	return s.repo.GetMilestoneEvents(startDate, endDate, isActive, pageSize, offset)
+	return s.repo.GetMilestoneEvents(startDate, endDate, eventContent, isActive, pageSize, offset)
 }
 
 // GetMilestoneEventByID 根据ID获取大事记

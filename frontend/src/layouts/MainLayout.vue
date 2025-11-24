@@ -4,7 +4,7 @@
     <div class="layout__bg-decoration"></div>
     
     <!-- 侧边栏 -->
-    <el-aside width="260px" class="layout__aside glass-effect animate-slide-in-left">
+    <el-aside :width="isCollapsed ? '80px' : '260px'" class="layout__aside glass-effect animate-slide-in-left" :class="{ 'is-collapsed': isCollapsed }">
       <div class="logo-container">
         <div class="logo">
           <div class="logo__icon">
@@ -20,16 +20,26 @@
           </div>
         </div>
       </div>
+      <el-button 
+        class="collapse-btn" 
+        @click="isCollapsed = !isCollapsed"
+        circle
+      >
+        {{ isCollapsed ? '→' : '←' }}
+      </el-button>
       <el-menu
         :default-active="activeMenu"
+        :collapse="isCollapsed"
         class="layout__menu"
         :background-color="themeStore.mode === 'dark' ? 'transparent' : 'transparent'"
-        :text-color="themeStore.mode === 'dark' ? 'var(--text-tertiary)' : 'var(--text-secondary)'"
+        :text-color="themeStore.mode === 'dark' ? 'var(--text-tertiary)' : 'var(- -text-secondary)'"
         :active-text-color="'var(--accent-color)'"
       >
         <el-menu-item index="dashboard" class="menu-item" @click="$router.push('/')">
-          <span class="menu-item__icon">📊</span>
-          <span>{{ t('layout.dashboard') }}</span>
+          <template #title>
+            <span class="menu-item__icon">📊</span>
+            <span>{{ t('layout.dashboard') }}</span>
+          </template>
         </el-menu-item>
         <el-sub-menu index="cmdb" class="menu-item">
           <template #title>
@@ -37,24 +47,60 @@
             <span>{{ t('layout.cmdb') }}</span>
           </template>
           <el-menu-item index="dutySchedule" @click="$router.push('/cmdb/duty')">
-            {{ t('layout.dutySchedule') }}
+            <template #title>
+              <span class="menu-item__icon">📅</span>
+              <span>{{ t('layout.dutySchedule') }}</span>
+            </template>
           </el-menu-item>
           <el-menu-item index="milestone" @click="$router.push('/cmdb/milestone')">
-            {{ t('layout.milestone') }}
+            <template #title>
+              <span class="menu-item__icon">🎯</span>
+              <span>{{ t('layout.milestone') }}</span>
+            </template>
           </el-menu-item>
         </el-sub-menu>
         <el-menu-item index="delivery" class="menu-item">
-          <span class="menu-item__icon">🚀</span>
-          <span>{{ t('layout.delivery') }}</span>
+          <template #title>
+            <span class="menu-item__icon">🚀</span>
+            <span>{{ t('layout.delivery') }}</span>
+          </template>
         </el-menu-item>
-        <el-menu-item index="digital" class="menu-item">
-          <span class="menu-item__icon">🤖</span>
-          <span>{{ t('layout.digital') }}</span>
-        </el-menu-item>
-        <el-menu-item index="system" class="menu-item">
-          <span class="menu-item__icon">⚙️</span>
-          <span>{{ t('layout.system') }}</span>
-        </el-menu-item>
+        <el-sub-menu index="digital" class="menu-item">
+          <template #title>
+            <span class="menu-item__icon">🤖</span>
+            <span>{{ t('layout.digital') }}</span>
+          </template>
+          <el-menu-item index="messageRecords" @click="$router.push('/digital/message-records')">
+            <template #title>
+              <span class="menu-item__icon">💬</span>
+              <span>历史会话记录</span>
+            </template>
+          </el-menu-item>
+          <el-menu-item index="exportRecords" @click="$router.push('/digital/export-records')">
+            <template #title>
+              <span class="menu-item__icon">📤</span>
+              <span>服务回传记录</span>
+            </template>
+          </el-menu-item>
+        </el-sub-menu>
+        <el-sub-menu index="system" class="menu-item">
+          <template #title>
+            <span class="menu-item__icon">⚙️</span>
+            <span>{{ t('layout.system') }}</span>
+          </template>
+          <el-menu-item index="scheduleTask" @click="$router.push('/system/schedule-tasks')">
+            <template #title>
+              <span class="menu-item__icon">⏰</span>
+              <span>调度任务管理</span>
+            </template>
+          </el-menu-item>
+          <el-menu-item index="rbac" @click="$router.push('/system/rbac')">
+            <template #title>
+              <span class="menu-item__icon">👥</span>
+              <span>用户角色权限</span>
+            </template>
+          </el-menu-item>
+        </el-sub-menu>
       </el-menu>
     </el-aside>
     
@@ -85,6 +131,25 @@
             {{ i18n.locale === 'zh' ? 'EN' : '中' }}
           </el-button>
           <el-tag type="success" class="status-tag">Alpha</el-tag>
+          
+          <!-- 用户信息 -->
+          <el-dropdown v-if="authStore.user" @command="handleLogout" class="user-dropdown">
+            <div class="user-info hover-lift">
+              <el-avatar :size="32" class="user-avatar">
+                <el-icon><User /></el-icon>
+              </el-avatar>
+              <span class="username">{{ authStore.user.username }}</span>
+              <el-icon class="dropdown-icon"><ArrowDown /></el-icon>
+            </div>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="logout" divided>
+                  <el-icon><User /></el-icon>
+                  退出登录
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </header>
       
@@ -97,22 +162,55 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { Sunny, Moon } from '@element-plus/icons-vue'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { Sunny, Moon, User, ArrowDown } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useThemeStore } from '../stores/theme'
+import { useAuthStore } from '../stores/auth'
 import { useI18n } from '../composables/useI18n'
 
 const route = useRoute()
+const router = useRouter()
 const themeStore = useThemeStore()
+const authStore = useAuthStore()
 const i18n = useI18n()
 const { t } = i18n
 const activeMenu = computed(() => route.name?.toString() ?? 'dashboard')
+const isCollapsed = ref(false)
 
 const themeIcon = computed(() => themeStore.mode === 'dark' ? Sunny : Moon)
 
-onMounted(() => {
+const handleLogout = async () => {
+  try {
+    await ElMessageBox.confirm(
+      '确定要退出登录吗？',
+      '确认退出',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    await authStore.logout()
+    ElMessage.success('退出成功')
+    router.push('/login')
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('退出失败')
+    }
+  }
+}
+
+onMounted(async () => {
   themeStore.applyTheme()
+  if (authStore.token && !authStore.user) {
+    try {
+      await authStore.fetchUserInfo()
+    } catch (error) {
+      console.error('Failed to fetch user info:', error)
+    }
+  }
 })
 </script>
 
@@ -148,6 +246,39 @@ onMounted(() => {
   border-right: 1px solid var(--border-color);
   box-shadow: var(--shadow-lg);
   min-height: 100vh;
+  transition: width 0.3s ease;
+}
+
+.layout__aside.is-collapsed {
+  padding: var(--spacing-xl) var(--spacing-sm);
+}
+
+.layout__aside.is-collapsed .logo__text {
+  display: none;
+}
+
+
+
+.collapse-btn {
+  position: absolute;
+  right: -15px;
+  top: 20px;
+  z-index: 20;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-size: 14px;
+  transition: all var(--transition-base);
+}
+
+.collapse-btn:hover {
+  background: var(--bg-glass-hover);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  transform: scale(1.1);
 }
 
 .logo-container {
@@ -244,6 +375,16 @@ onMounted(() => {
   margin-right: var(--spacing-sm);
 }
 
+:deep(.el-menu--collapse) .menu-item__icon {
+  margin-right: 0;
+}
+
+
+
+.layout__aside.is-collapsed .logo {
+  justify-content: center;
+}
+
 /* 主内容区 */
 .layout__content {
   flex: 1;
@@ -260,8 +401,8 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-lg) var(--spacing-xl);
-  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
   position: sticky;
@@ -280,7 +421,7 @@ onMounted(() => {
 }
 
 .header__title {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 700;
   margin: 0;
   background: var(--gradient-accent);
@@ -323,6 +464,54 @@ onMounted(() => {
   box-shadow: var(--shadow-sm);
 }
 
+/* 用户信息样式 */
+.user-dropdown {
+  cursor: pointer;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: var(--bg-glass);
+  border: 1px solid var(--border-color);
+  transition: all var(--transition-base);
+}
+
+.user-info:hover {
+  background: var(--bg-glass-hover);
+  border-color: var(--accent-color);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+}
+
+.user-avatar {
+  background: var(--gradient-accent);
+  color: white;
+}
+
+.username {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropdown-icon {
+  font-size: 12px;
+  color: var(--text-muted);
+  transition: transform var(--transition-base);
+}
+
+.user-dropdown:hover .dropdown-icon {
+  transform: rotate(180deg);
+}
+
 /* 主内容 */
 .layout__main {
   flex: 1;
@@ -355,6 +544,14 @@ onMounted(() => {
   
   .header__subtitle {
     display: none;
+  }
+  
+  .username {
+    display: none;
+  }
+  
+  .user-info {
+    padding: var(--spacing-sm);
   }
 }
 </style>

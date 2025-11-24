@@ -35,10 +35,11 @@ func NewCMDBHandler(svc *service.CMDBService) *CMDBHandler {
 func (h *CMDBHandler) GetDutySchedules(c *gin.Context) {
 	startDate := c.Query("startDate")
 	endDate := c.Query("endDate")
+	staffName := c.Query("staffName")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
 
-	schedules, total, err := h.svc.GetDutySchedules(startDate, endDate, page, pageSize)
+	schedules, total, err := h.svc.GetDutySchedules(startDate, endDate, staffName, page, pageSize)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, err.Error())
 		return
@@ -161,6 +162,7 @@ func (h *CMDBHandler) DeleteDutySchedule(c *gin.Context) {
 func (h *CMDBHandler) GetMilestoneEvents(c *gin.Context) {
 	startDate := c.Query("startDate")
 	endDate := c.Query("endDate")
+	eventContent := c.Query("eventContent")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
 
@@ -170,7 +172,7 @@ func (h *CMDBHandler) GetMilestoneEvents(c *gin.Context) {
 		isActive = &val
 	}
 
-	events, total, err := h.svc.GetMilestoneEvents(startDate, endDate, isActive, page, pageSize)
+	events, total, err := h.svc.GetMilestoneEvents(startDate, endDate, eventContent, isActive, page, pageSize)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, err.Error())
 		return

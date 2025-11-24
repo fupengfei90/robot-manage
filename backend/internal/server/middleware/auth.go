@@ -25,23 +25,34 @@ func JWTAuth(secret string, allowAnonymous bool) gin.HandlerFunc {
 			return
 		}
 
+		// 提取token
+		tokenString := authHeader
 		if strings.HasPrefix(strings.ToLower(authHeader), "bearer ") {
-			authHeader = strings.TrimSpace(authHeader[7:])
+			tokenString = strings.TrimSpace(authHeader[7:])
 		}
 
-		token, err := jwt.Parse(authHeader, func(token *jwt.Token) (interface{}, error) {
+		// 解析token
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			// 验证签名方法
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
 			return []byte(secret), nil
 		})
 
-		if err != nil || !token.Valid {
+		if err != nil {
+			response.Error(c, http.StatusUnauthorized, "Token无效或已过期: "+err.Error())
+			c.Abort()
+			return
+		}
+
+		if !token.Valid {
 			response.Error(c, http.StatusUnauthorized, "Token无效或已过期")
 			c.Abort()
 			return
 		}
 
+		// 提取claims
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
 			if sub, ok := claims["sub"].(string); ok {
 				c.Set("user_id", sub)

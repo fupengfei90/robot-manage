@@ -1,0 +1,9 @@
+# 忽略不需要的文件
+.git
+.gitignore
+*.md
+logs/
+*.log
+.env
+.DS_Store
+server

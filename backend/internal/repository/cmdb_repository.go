@@ -21,7 +21,7 @@ func NewCMDBRepository(db *gorm.DB) *CMDBRepository {
 // ========== 值班排班相关 ==========
 
 // GetDutySchedules 获取值班排班列表
-func (r *CMDBRepository) GetDutySchedules(startDate, endDate string, limit, offset int) ([]model.DutySchedule, int64, error) {
+func (r *CMDBRepository) GetDutySchedules(startDate, endDate, staffName string, limit, offset int) ([]model.DutySchedule, int64, error) {
 	var schedules []model.DutySchedule
 	var total int64
 
@@ -32,6 +32,9 @@ func (r *CMDBRepository) GetDutySchedules(startDate, endDate string, limit, offs
 	}
 	if endDate != "" {
 		query = query.Where("duty_date <= ?", endDate)
+	}
+	if staffName != "" {
+		query = query.Where("wb_staff_name LIKE ? OR fb_staff_name LIKE ?", "%"+staffName+"%", "%"+staffName+"%")
 	}
 
 	if err := query.Count(&total).Error; err != nil {
@@ -81,7 +84,7 @@ func (r *CMDBRepository) DeleteDutySchedule(id int) error {
 // ========== 大事记相关 ==========
 
 // GetMilestoneEvents 获取大事记列表
-func (r *CMDBRepository) GetMilestoneEvents(startDate, endDate string, isActive *bool, limit, offset int) ([]model.MilestoneEvent, int64, error) {
+func (r *CMDBRepository) GetMilestoneEvents(startDate, endDate, eventContent string, isActive *bool, limit, offset int) ([]model.MilestoneEvent, int64, error) {
 	var events []model.MilestoneEvent
 	var total int64
 
@@ -92,6 +95,9 @@ func (r *CMDBRepository) GetMilestoneEvents(startDate, endDate string, isActive 
 	}
 	if endDate != "" {
 		query = query.Where("event_date <= ?", endDate)
+	}
+	if eventContent != "" {
+		query = query.Where("event_content LIKE ?", "%"+eventContent+"%")
 	}
 	if isActive != nil {
 		query = query.Where("is_active = ?", *isActive)
