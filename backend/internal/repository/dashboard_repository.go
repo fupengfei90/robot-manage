@@ -36,7 +36,7 @@ func (r *DashboardRepository) FetchSummary() (*model.DashboardSummary, error) {
 		// 使用真实数据统计服务次数（包括定时任务，排除无效数据）
 		now := time.Now()
 		today := now.Format("2006-01-02")
-		weekAgo := now.AddDate(0, 0, -7).Format("2006-01-02")
+		weekAgo := now.AddDate(0, 0, -6).Format("2006-01-02") // 修正：最近7天（包括今天）
 		monthAgo := now.AddDate(0, -1, 0).Format("2006-01-02")
 		yearAgo := now.AddDate(-1, 0, 0).Format("2006-01-02")
 
@@ -50,11 +50,58 @@ func (r *DashboardRepository) FetchSummary() (*model.DashboardSummary, error) {
 		summary.ServiceCounts["weekly"] = int(weeklyCount)
 		summary.ServiceCounts["monthly"] = int(monthlyCount)
 		summary.ServiceCounts["yearly"] = int(yearlyCount)
+		
+		// 统计最近7天的用户服务和定时任务分类
+		var weeklyUserService, weeklyScheduledTask int64
+		tx.Table("wecom_message_records").Where("DATE(created_at) >= ? AND (type IS NULL OR type != 'scheduled_task') AND (is_valid = 1 OR is_valid IS NULL)", weekAgo).Count(&weeklyUserService)
+		tx.Table("wecom_message_records").Where("DATE(created_at) >= ? AND type = 'scheduled_task' AND (is_valid = 1 OR is_valid IS NULL)", weekAgo).Count(&weeklyScheduledTask)
+		summary.ServiceCounts["weekly_user_service"] = int(weeklyUserService)
+		summary.ServiceCounts["weekly_scheduled_task"] = int(weeklyScheduledTask)
 
-		// 用户数统计，从RBAC用户表获取
+		// 在册用户数统计，从wecom_users表获取
 		var userCount int64
-		if err := tx.Table("rbac_users").Count(&userCount).Error; err == nil {
+		if err := tx.Table("wecom_users").Where("deleted_at IS NULL").Count(&userCount).Error; err == nil {
 			summary.UserCount = int(userCount)
+		}
+
+		// 服务用户数统计，从会话记录表获取去重用户数
+		var serviceUserCount int64
+		if err := tx.Table("wecom_message_records").Distinct("request_user_id").Count(&serviceUserCount).Error; err == nil {
+			summary.ServiceUserCount = int(serviceUserCount)
+		}
+
+		// 服务次数趋势统计（最近30天，只统计有效数据）
+		summary.ServiceTrend.Detail = map[string]int{}
+		type serviceTrendRow struct {
+			Date      string
+			NonTask   int
+			Scheduled int
+		}
+		var trendRows []serviceTrendRow
+		if err := tx.Raw(`
+			SELECT 
+				DATE(created_at) as date,
+				SUM(CASE WHEN (type IS NULL OR type != 'scheduled_task') AND (is_valid = 1 OR is_valid IS NULL) THEN 1 ELSE 0 END) as non_task,
+				SUM(CASE WHEN type = 'scheduled_task' AND (is_valid = 1 OR is_valid IS NULL) THEN 1 ELSE 0 END) as scheduled
+			FROM wecom_message_records
+			WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+			GROUP BY DATE(created_at)
+			ORDER BY date ASC
+		`).Scan(&trendRows).Error; err != nil {
+			logger.L().Warn("查询服务次数趋势失败", zap.Error(err))
+		}
+		logger.L().Info("服务次数趋势查询结果", zap.Int("rows", len(trendRows)))
+		for _, row := range trendRows {
+			// 格式化日期为 MM-DD
+			if len(row.Date) >= 10 {
+				label := row.Date[5:10]
+				total := row.NonTask + row.Scheduled
+				summary.ServiceTrend.Labels = append(summary.ServiceTrend.Labels, label)
+				summary.ServiceTrend.Trend = append(summary.ServiceTrend.Trend, total)
+				summary.ServiceTrend.Total += total
+				summary.ServiceTrend.Detail["用户服务_"+label] = row.NonTask
+				summary.ServiceTrend.Detail["定时任务_"+label] = row.Scheduled
+			}
 		}
 
 		summary.Inspection.Detail = map[string]int{}
@@ -296,7 +343,14 @@ func mockSummary() *model.DashboardSummary {
 			"monthly": 2100,
 			"yearly":  14500,
 		},
-		UserCount: 86,
+		UserCount:        86,
+		ServiceUserCount: 52,
+		ServiceTrend: model.MetricBreakdown{
+			Total:  520,
+			Trend:  []int{65, 72, 88, 91, 78, 83, 83},
+			Labels: []string{"11-18", "11-19", "11-20", "11-21", "11-22", "11-23", "11-24"},
+			Detail: map[string]int{"用户服务": 420, "定时任务": 100},
+		},
 		Inspection: model.MetricBreakdown{
 			Total:  320,
 			Trend:  []int{12, 18, 22, 25, 21, 30, 35},

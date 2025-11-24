@@ -8,8 +8,10 @@ export interface MetricBreakdown {
 export interface DashboardSummary {
   serviceCounts: Record<string, number>
   userCount: number
+  serviceUserCount: number
   inspection: MetricBreakdown
   alerts: MetricBreakdown
+  serviceTrend: MetricBreakdown
 }
 
 export interface KnowledgeItem {

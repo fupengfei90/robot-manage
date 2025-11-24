@@ -2,10 +2,12 @@ package model
 
 // DashboardSummary 概览指标。
 type DashboardSummary struct {
-	ServiceCounts map[string]int  `json:"serviceCounts"`
-	UserCount     int             `json:"userCount"`
-	Inspection    MetricBreakdown `json:"inspection"`
-	Alerts        MetricBreakdown `json:"alerts"`
+	ServiceCounts    map[string]int  `json:"serviceCounts"`
+	UserCount        int             `json:"userCount"`
+	ServiceUserCount int             `json:"serviceUserCount"`
+	Inspection       MetricBreakdown `json:"inspection"`
+	Alerts           MetricBreakdown `json:"alerts"`
+	ServiceTrend     MetricBreakdown `json:"serviceTrend"`
 }
 
 // MetricBreakdown 细分指标。

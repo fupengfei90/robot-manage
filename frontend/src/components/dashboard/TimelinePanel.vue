@@ -10,14 +10,17 @@
           </p>
         </div>
       </div>
-      <el-button text type="primary" class="view-btn hover-lift">
+      <el-button text type="primary" class="view-btn hover-lift" @click="goToDutySchedule">
         {{ t('dashboard.timeline.viewSchedule') }}
       </el-button>
     </div>
 
     <div class="panel__content">
       <section class="section-card">
-        <h3 class="section-title">{{ t('dashboard.timeline.milestones') }}</h3>
+        <div class="section-header">
+          <h3 class="section-title">{{ t('dashboard.timeline.milestones') }}</h3>
+          <el-button text type="primary" size="small" @click="goToMilestone">查看更多</el-button>
+        </div>
         <el-steps direction="vertical" class="custom-steps">
           <el-step
             v-for="(item, index) in timeline.milestones"
@@ -47,14 +50,24 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import type { TimelineInfo } from '../../types/dashboard'
 import { useI18n } from '../../composables/useI18n'
 
 const { t } = useI18n()
+const router = useRouter()
 defineProps<{ timeline: TimelineInfo }>()
 
 const tableRowClassName = ({ rowIndex }: { rowIndex: number }) => {
   return rowIndex % 2 === 1 ? 'table-row-even' : ''
+}
+
+const goToDutySchedule = () => {
+  router.push({ name: 'dutySchedule' })
+}
+
+const goToMilestone = () => {
+  router.push({ name: 'milestone' })
 }
 </script>
 
@@ -146,14 +159,21 @@ const tableRowClassName = ({ rowIndex }: { rowIndex: number }) => {
   border-color: var(--border-color-hover);
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
 .section-title {
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--text-secondary);
-  margin-bottom: var(--spacing-lg);
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+  margin: 0;
 }
 
 .section-title::before {
@@ -166,6 +186,27 @@ const tableRowClassName = ({ rowIndex }: { rowIndex: number }) => {
 
 .custom-steps {
   padding-left: var(--spacing-md);
+  max-height: 500px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.custom-steps::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-steps::-webkit-scrollbar-track {
+  background: var(--bg-glass);
+  border-radius: var(--radius-full);
+}
+
+.custom-steps::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: var(--radius-full);
+}
+
+.custom-steps::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-color);
 }
 
 .step-item {

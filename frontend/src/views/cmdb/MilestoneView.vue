@@ -133,6 +133,7 @@
             placeholder="选择事件日期"
             format="YYYY-MM-DD"
             value-format="YYYY-MM-DD"
+            :clearable="false"
             style="width: 100%"
           />
         </el-form-item>
@@ -301,9 +302,12 @@ const handleSubmit = async () => {
 
     submitting.value = true
     try {
+      // 确保日期格式为 YYYY-MM-DD
+      const eventDate = formData.eventDate.split('T')[0]
+      
       if (isEdit.value && currentId.value) {
         const updateData: MilestoneEventUpdateRequest = {
-          eventDate: formData.eventDate,
+          eventDate,
           eventContent: formData.eventContent,
           isActive: formData.isActive
         }
@@ -311,7 +315,7 @@ const handleSubmit = async () => {
         ElMessage.success('更新成功')
       } else {
         const createData: MilestoneEventCreateRequest = {
-          eventDate: formData.eventDate,
+          eventDate,
           eventContent: formData.eventContent
         }
         await createMilestoneEvent(createData)

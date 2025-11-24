@@ -41,13 +41,47 @@
           </svg>
         </div>
         <div class="metric__content">
-          <p class="metric__label">{{ t('dashboard.metrics.users') }}</p>
+          <p class="metric__label">在册用户数</p>
           <p class="metric__value">{{ summary.userCount.toLocaleString() }}</p>
+        </div>
+      </div>
+      <div class="metric metric--highlight card-hover">
+        <div class="metric__icon metric__icon--highlight">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" stroke-width="2" fill="none"/>
+            <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2" fill="none"/>
+            <path d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13" stroke="currentColor" stroke-width="2" fill="none"/>
+            <path d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88" stroke="currentColor" stroke-width="2" fill="none"/>
+          </svg>
+        </div>
+        <div class="metric__content">
+          <p class="metric__label">服务用户数</p>
+          <p class="metric__value">{{ summary.serviceUserCount.toLocaleString() }}</p>
         </div>
       </div>
     </div>
 
     <div class="panel__charts">
+      <div class="chart-wrapper chart-wrapper--wide">
+        <div class="chart-header">
+          <el-radio-group v-model="trendDimension" size="small" @change="updateServiceTrendChart">
+            <el-radio-button label="day">天</el-radio-button>
+            <el-radio-button label="week">周</el-radio-button>
+          </el-radio-group>
+        </div>
+        <div ref="serviceTrendRef" class="chart chart--service"></div>
+        <div class="chart-summary">
+          <div class="summary-title">{{ trendDimension === 'day' ? '本周汇总' : '本月汇总' }}</div>
+          <div class="summary-item">
+            <span class="summary-label">用户服务</span>
+            <span class="summary-value">{{ currentPeriodSummary.userService.toLocaleString() }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">定时任务</span>
+            <span class="summary-value">{{ currentPeriodSummary.scheduledTask.toLocaleString() }}</span>
+          </div>
+        </div>
+      </div>
       <div ref="inspectionRef" class="chart chart--inspection"></div>
       <div ref="alertsRef" class="chart chart--alerts"></div>
     </div>
@@ -65,8 +99,49 @@ const props = defineProps<{ summary: DashboardSummary }>()
 const themeStore = useThemeStore()
 const { t } = useI18n()
 
+const serviceTrendRef = ref<HTMLDivElement | null>(null)
 const inspectionRef = ref<HTMLDivElement | null>(null)
 const alertsRef = ref<HTMLDivElement | null>(null)
+const trendDimension = ref<'day' | 'week'>('day')
+const currentPeriodSummary = computed(() => {
+  if (!props.summary) return { userService: 0, scheduledTask: 0, total: 0 }
+  
+  const { serviceTrend, serviceCounts } = props.summary
+  let userService = 0
+  let scheduledTask = 0
+  
+  if (trendDimension.value === 'day') {
+    // 天纬度：使用后端统计的weekly数据（最近7天）
+    const total = serviceCounts.weekly || 0
+    // 从最近7天的明细数据中计算分类
+    const now = new Date()
+    const last7Days: string[] = []
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now)
+      date.setDate(date.getDate() - i)
+      const label = `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+      last7Days.push(label)
+    }
+    last7Days.forEach(label => {
+      userService += serviceTrend.detail[`用户服务_${label}`] || 0
+      scheduledTask += serviceTrend.detail[`定时任务_${label}`] || 0
+    })
+  } else {
+    // 周纬度：统计本月数据
+    const currentMonth = new Date().getMonth() + 1
+    serviceTrend.labels.forEach(label => {
+      const [month] = label.split('-').map(Number)
+      if (month === currentMonth) {
+        userService += serviceTrend.detail[`用户服务_${label}`] || 0
+        scheduledTask += serviceTrend.detail[`定时任务_${label}`] || 0
+      }
+    })
+  }
+  
+  return { userService, scheduledTask, total: userService + scheduledTask }
+})
+
+let serviceTrendChart: echarts.ECharts | null = null
 let inspectionChart: echarts.ECharts | null = null
 let alertsChart: echarts.ECharts | null = null
 
@@ -122,6 +197,9 @@ const getTimeRange = (key: string) => {
 }
 
 const initCharts = () => {
+  if (serviceTrendRef.value) {
+    serviceTrendChart = echarts.init(serviceTrendRef.value)
+  }
   if (inspectionRef.value) {
     inspectionChart = echarts.init(inspectionRef.value)
   }
@@ -132,13 +210,154 @@ const initCharts = () => {
 }
 
 const handleResize = () => {
+  serviceTrendChart?.resize()
   inspectionChart?.resize()
   alertsChart?.resize()
+}
+
+const updateServiceTrendChart = () => {
+  if (!props.summary) return
+  const { serviceTrend } = props.summary
+  
+  let labels = serviceTrend.labels
+  let trend = serviceTrend.trend
+  let detailData: Record<string, number> = {}
+  
+  // 如果是周纬度，需要聚合数据
+  if (trendDimension.value === 'week') {
+    const weekData: Record<string, { total: number, userService: number, scheduledTask: number }> = {}
+    
+    serviceTrend.labels.forEach((label, index) => {
+      // 解析日期 MM-DD
+      const [month, day] = label.split('-').map(Number)
+      const year = new Date().getFullYear()
+      const date = new Date(year, month - 1, day)
+      
+      // 计算周数（从当月第一天开始）
+      const firstDayOfMonth = new Date(year, month - 1, 1)
+      const dayOfMonth = date.getDate()
+      const weekNum = Math.ceil(dayOfMonth / 7)
+      const weekKey = `${String(month).padStart(2, '0')}-W${weekNum}`
+      
+      if (!weekData[weekKey]) {
+        weekData[weekKey] = { total: 0, userService: 0, scheduledTask: 0 }
+      }
+      
+      weekData[weekKey].total += serviceTrend.trend[index]
+      weekData[weekKey].userService += serviceTrend.detail[`用户服务_${label}`] || 0
+      weekData[weekKey].scheduledTask += serviceTrend.detail[`定时任务_${label}`] || 0
+    })
+    
+    labels = Object.keys(weekData).sort()
+    trend = labels.map(key => weekData[key].total)
+    labels.forEach(key => {
+      detailData[`用户服务_${key}`] = weekData[key].userService
+      detailData[`定时任务_${key}`] = weekData[key].scheduledTask
+    })
+  } else {
+    detailData = serviceTrend.detail
+  }
+
+  serviceTrendChart?.setOption({
+    title: { 
+      text: '服务次数趋势', 
+      textStyle: { 
+        color: textColor.value,
+        fontSize: 16,
+        fontWeight: 600
+      },
+      left: 'center'
+    },
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params: any) => {
+        const data = params[0]
+        const date = data.name
+        const total = data.value
+        const userService = detailData[`用户服务_${date}`] || 0
+        const scheduledTask = detailData[`定时任务_${date}`] || 0
+        return `${date}<br/>总服务次数: ${total}<br/>用户服务: ${userService}<br/>定时任务: ${scheduledTask}`
+      }
+    },
+    xAxis: { 
+      type: 'category', 
+      data: labels, 
+      axisLabel: { color: axisLabelColor.value },
+      axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.2)' } },
+      splitLine: { show: false }
+    },
+    yAxis: { 
+      type: 'value', 
+      axisLabel: { color: axisLabelColor.value },
+      axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.2)' } },
+      splitLine: { 
+        lineStyle: { 
+          color: 'rgba(148, 163, 184, 0.1)',
+          type: 'dashed'
+        }
+      }
+    },
+    series: [
+      {
+        data: trend,
+        type: 'line',
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 8,
+        lineStyle: {
+          width: 3,
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: '#10b981' },
+              { offset: 1, color: '#3b82f6' }
+            ]
+          }
+        },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgba(16, 185, 129, 0.3)' },
+              { offset: 1, color: 'rgba(59, 130, 246, 0.1)' }
+            ]
+          }
+        },
+        itemStyle: {
+          color: '#10b981',
+          borderColor: '#fff',
+          borderWidth: 2
+        },
+        emphasis: {
+          focus: 'series',
+          itemStyle: {
+            shadowBlur: 10,
+            shadowColor: 'rgba(16, 185, 129, 0.5)'
+          }
+        },
+        animation: true,
+        animationDuration: 1000,
+        animationEasing: 'cubicOut'
+      }
+    ],
+    grid: { left: 50, right: 30, top: 60, bottom: 40 },
+    backgroundColor: 'transparent'
+  })
 }
 
 const updateCharts = () => {
   if (!props.summary) return
   const { inspection, alerts } = props.summary
+
+  updateServiceTrendChart()
 
   inspectionChart?.setOption({
     title: { 
@@ -301,6 +520,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
+  serviceTrendChart?.dispose()
   inspectionChart?.dispose()
   alertsChart?.dispose()
 })
@@ -514,9 +734,13 @@ watch(
 
 .panel__charts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--spacing-lg);
   margin-top: var(--spacing-xl);
+}
+
+.chart-wrapper--wide {
+  grid-column: span 2;
 }
 
 .chart {
@@ -530,6 +754,62 @@ watch(
 .chart:hover {
   background: var(--bg-glass-hover);
   box-shadow: var(--shadow-md);
+}
+
+.chart-wrapper {
+  position: relative;
+}
+
+.chart-header {
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  z-index: 10;
+}
+
+.chart--service {
+  border-left: 3px solid var(--color-success);
+}
+
+.chart-summary {
+  position: absolute;
+  top: 50px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: var(--bg-glass);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+}
+
+.summary-title {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-align: center;
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.summary-label {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.summary-value {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 1rem;
 }
 
 .chart--inspection {
@@ -548,6 +828,10 @@ watch(
   
   .panel__charts {
     grid-template-columns: 1fr;
+  }
+  
+  .chart-wrapper--wide {
+    grid-column: span 1;
   }
   
   .metric {
