@@ -31,7 +31,7 @@
         <el-form-item prop="username">
           <el-input
             v-model="loginForm.username"
-            placeholder="请输入用户名"
+            :placeholder="t('auth.username')"
             size="large"
             :prefix-icon="User"
             class="login-input"
@@ -43,7 +43,7 @@
           <el-input
             v-model="loginForm.password"
             type="password"
-            placeholder="请输入密码"
+            :placeholder="t('auth.password')"
             size="large"
             :prefix-icon="Lock"
             class="login-input"
@@ -54,7 +54,7 @@
 
         <el-form-item>
           <el-checkbox v-model="loginForm.remember" class="remember-checkbox">
-            记住我
+            {{ t('auth.rememberMe') }}
           </el-checkbox>
         </el-form-item>
 
@@ -66,7 +66,7 @@
             :loading="loading"
             @click="handleLogin"
           >
-            {{ loading ? '登录中...' : '登录' }}
+            {{ loading ? '...' : t('auth.login') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -90,6 +90,9 @@ import { User, Lock } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useAuthStore } from '../../stores/auth'
 import { ElMessage } from 'element-plus'
+import { useCommon } from '../../composables/useCommon'
+
+const { t } = useCommon()
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -135,10 +138,10 @@ const handleLogin = async () => {
         localStorage.removeItem('remember_username')
       }
 
-      ElMessage.success('登录成功')
+      ElMessage.success(t('auth.loginSuccess'))
       router.push('/')
     } catch (error: any) {
-      errorMessage.value = error.message || '登录失败，请检查用户名和密码'
+      errorMessage.value = error.message || t('auth.loginFailed')
     } finally {
       loading.value = false
     }

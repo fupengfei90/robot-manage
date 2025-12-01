@@ -41,7 +41,7 @@
           </svg>
         </div>
         <div class="metric__content">
-          <p class="metric__label">在册用户数</p>
+          <p class="metric__label">{{ t('dashboard.metrics.users') }}</p>
           <p class="metric__value">{{ summary.userCount.toLocaleString() }}</p>
         </div>
       </div>
@@ -55,7 +55,7 @@
           </svg>
         </div>
         <div class="metric__content">
-          <p class="metric__label">服务用户数</p>
+          <p class="metric__label">{{ t('dashboard.metrics.serviceUsers') }}</p>
           <p class="metric__value">{{ summary.serviceUserCount.toLocaleString() }}</p>
         </div>
       </div>
@@ -71,19 +71,20 @@
         </div>
         <div ref="serviceTrendRef" class="chart chart--service"></div>
         <div class="chart-summary">
-          <div class="summary-title">{{ trendDimension === 'day' ? '本周汇总' : '本月汇总' }}</div>
+          <div class="summary-title">{{ trendDimension === 'day' ? t('dashboard.metrics.weekSummary') : t('dashboard.metrics.monthSummary') }}</div>
           <div class="summary-item">
-            <span class="summary-label">用户服务</span>
+            <span class="summary-label">{{ t('dashboard.metrics.userService') }}</span>
             <span class="summary-value">{{ currentPeriodSummary.userService.toLocaleString() }}</span>
           </div>
           <div class="summary-item">
-            <span class="summary-label">定时任务</span>
+            <span class="summary-label">{{ t('dashboard.metrics.scheduledTask') }}</span>
             <span class="summary-value">{{ currentPeriodSummary.scheduledTask.toLocaleString() }}</span>
           </div>
         </div>
       </div>
       <div ref="inspectionRef" class="chart chart--inspection"></div>
       <div ref="alertsRef" class="chart chart--alerts"></div>
+
     </div>
   </el-card>
 </template>
@@ -102,6 +103,7 @@ const { t } = useI18n()
 const serviceTrendRef = ref<HTMLDivElement | null>(null)
 const inspectionRef = ref<HTMLDivElement | null>(null)
 const alertsRef = ref<HTMLDivElement | null>(null)
+
 const trendDimension = ref<'day' | 'week'>('day')
 const currentPeriodSummary = computed(() => {
   if (!props.summary) return { userService: 0, scheduledTask: 0, total: 0 }
@@ -144,6 +146,7 @@ const currentPeriodSummary = computed(() => {
 let serviceTrendChart: echarts.ECharts | null = null
 let inspectionChart: echarts.ECharts | null = null
 let alertsChart: echarts.ECharts | null = null
+
 
 const textColor = computed(() => {
   return themeStore.mode === 'dark' ? '#e2e8f0' : '#1e293b'
@@ -206,6 +209,7 @@ const initCharts = () => {
   if (alertsRef.value) {
     alertsChart = echarts.init(alertsRef.value)
   }
+
   updateCharts()
 }
 
@@ -213,6 +217,7 @@ const handleResize = () => {
   serviceTrendChart?.resize()
   inspectionChart?.resize()
   alertsChart?.resize()
+
 }
 
 const updateServiceTrendChart = () => {
@@ -355,23 +360,49 @@ const updateServiceTrendChart = () => {
 
 const updateCharts = () => {
   if (!props.summary) return
-  const { inspection, alerts } = props.summary
 
   updateServiceTrendChart()
-
+  
+  // Mock数据 - 巡检分析次数
+  const mockInspection = {
+    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    trend: [12, 18, 22, 25, 21, 30, 35]
+  }
+  
+  // Mock数据 - 告警分析次数
+  const mockAlerts = {
+    labels: ['10-20', '10-30', '11-21', '11-29'],
+    trend: [3, 11, 20, 8]
+  }
+  
   inspectionChart?.setOption({
     title: { 
-      text: t('dashboard.metrics.inspectionTrend'), 
+      text: `${t('dashboard.metrics.inspectionTrend')} {todo|TODO}`,
       textStyle: { 
         color: textColor.value,
         fontSize: 16,
-        fontWeight: 600
+        fontWeight: 600,
+        rich: {
+          todo: {
+            backgroundColor: '#fef3c7',
+            color: '#92400e',
+            borderColor: '#fbbf24',
+            borderWidth: 1,
+            borderRadius: 4,
+            padding: [2, 6],
+            fontSize: 12,
+            fontWeight: 'normal'
+          }
+        }
       },
       left: 'center'
     },
+    tooltip: {
+      trigger: 'axis'
+    },
     xAxis: { 
       type: 'category', 
-      data: inspection.labels, 
+      data: mockInspection.labels, 
       axisLabel: { color: axisLabelColor.value },
       axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.2)' } },
       splitLine: { show: false }
@@ -389,7 +420,7 @@ const updateCharts = () => {
     },
     series: [
       {
-        data: inspection.trend,
+        data: mockInspection.trend,
         type: 'line',
         smooth: true,
         symbol: 'circle',
@@ -444,17 +475,32 @@ const updateCharts = () => {
 
   alertsChart?.setOption({
     title: { 
-      text: t('dashboard.metrics.alertLevel'), 
+      text: `${t('dashboard.metrics.alertLevel')} {todo|TODO}`,
       textStyle: { 
         color: textColor.value,
         fontSize: 16,
-        fontWeight: 600
+        fontWeight: 600,
+        rich: {
+          todo: {
+            backgroundColor: '#fef3c7',
+            color: '#92400e',
+            borderColor: '#fbbf24',
+            borderWidth: 1,
+            borderRadius: 4,
+            padding: [2, 6],
+            fontSize: 12,
+            fontWeight: 'normal'
+          }
+        }
       },
       left: 'center'
     },
+    tooltip: {
+      trigger: 'axis'
+    },
     xAxis: { 
       type: 'category', 
-      data: alerts.labels, 
+      data: mockAlerts.labels, 
       axisLabel: { color: axisLabelColor.value },
       axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.2)' } },
       splitLine: { show: false }
@@ -472,7 +518,7 @@ const updateCharts = () => {
     },
     series: [
       {
-        data: alerts.trend,
+        data: mockAlerts.trend,
         type: 'bar',
         barWidth: '60%',
         itemStyle: {
@@ -523,6 +569,7 @@ onBeforeUnmount(() => {
   serviceTrendChart?.dispose()
   inspectionChart?.dispose()
   alertsChart?.dispose()
+
 })
 
 watch(
@@ -548,7 +595,8 @@ watch(
   color: var(--text-primary);
   transition: all var(--transition-base);
   position: relative;
-  overflow: hidden;
+  overflow: auto;
+  min-width: 900px;
 }
 
 .panel::before {
@@ -734,9 +782,10 @@ watch(
 
 .panel__charts {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(400px, 1fr));
   gap: var(--spacing-lg);
   margin-top: var(--spacing-xl);
+  min-width: 850px;
 }
 
 .chart-wrapper--wide {
@@ -745,6 +794,7 @@ watch(
 
 .chart {
   height: 280px;
+  min-width: 400px;
   border-radius: var(--radius-lg);
   background: var(--bg-glass);
   padding: var(--spacing-md);
@@ -773,8 +823,8 @@ watch(
 
 .chart-summary {
   position: absolute;
-  top: 50px;
-  right: 20px;
+  top: 5px;
+  right: 200px;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);

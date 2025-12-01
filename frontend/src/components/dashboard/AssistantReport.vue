@@ -4,7 +4,7 @@
       <div class="header__content">
         <div class="header__icon">📝</div>
         <div>
-          <h2 class="panel__title">{{ t('dashboard.assistant.title') }}</h2>
+          <h2 class="panel__title">{{ t('dashboard.assistant.title') }} <el-tag size="small" type="warning">TODO</el-tag></h2>
           <p class="panel__subtitle">{{ t('dashboard.assistant.range') }}：{{ report.range }}</p>
         </div>
       </div>
@@ -127,6 +127,10 @@ const rangeLabels = computed(() => ({
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin: 0;
+}
+
+.panel__title :deep(.el-tag) {
+  -webkit-text-fill-color: #92400e !important;
 }
 
 .panel__subtitle {
@@ -262,5 +266,11 @@ const rangeLabels = computed(() => ({
   .report {
     grid-template-columns: 1fr;
   }
+}
+
+.panel__title :deep(.el-tag) {
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+  border-color: #fbbf24 !important;
 }
 </style>

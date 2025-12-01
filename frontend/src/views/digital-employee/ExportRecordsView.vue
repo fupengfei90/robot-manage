@@ -121,6 +121,9 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useCommon } from '../../composables/useCommon'
+
+const { t } = useCommon()
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   getExportRecords,

@@ -28,6 +28,30 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/cmdb/batch-time',
+    name: 'batchTime',
+    component: () => import('../views/cmdb/BatchTimeView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/cmdb/wb-cmdb',
+    name: 'wbCMDB',
+    component: () => import('../views/cmdb/WBCMDBView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/cmdb/vb-cmdb',
+    name: 'vbCMDB',
+    component: () => import('../views/cmdb/VBCMDBView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/cmdb/itsm-package',
+    name: 'itsmPackage',
+    component: () => import('../views/cmdb/ITSMPackageView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/system/schedule-tasks',
     name: 'scheduleTask',
     component: () => import('../views/system/ScheduleTaskView.vue'),
@@ -49,6 +73,30 @@ const routes: RouteRecordRaw[] = [
     path: '/digital/export-records',
     name: 'exportRecords',
     component: () => import('../views/digital-employee/ExportRecordsView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/help/user-guide',
+    name: 'userGuide',
+    component: () => import('../views/help/UserGuideView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/help/project-plan',
+    name: 'projectPlan',
+    component: () => import('../views/system/ProjectPlanView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/system/weekly-report',
+    name: 'weeklyReport',
+    component: () => import('../views/system/WeeklyReportView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/system/digital-human',
+    name: 'digitalHuman',
+    component: () => import('../views/system/DigitalHumanView.vue'),
     meta: { requiresAuth: true }
   }
 ]

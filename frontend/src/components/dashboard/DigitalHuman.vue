@@ -1,7 +1,7 @@
 <template>
   <el-card shadow="never" class="panel">
     <div class="panel__header">
-      <h2>{{ t('dashboard.digitalHuman.title') }}</h2>
+      <h2>{{ t('dashboard.digitalHuman.title') }} <el-tag size="small" type="warning">TODO</el-tag></h2>
       <el-button text type="primary" @click="speak">{{ t('dashboard.digitalHuman.speak') }}</el-button>
     </div>
     <div ref="canvasRef" class="canvas"></div>
@@ -100,5 +100,11 @@ watch(() => themeStore.mode, () => {
 .canvas {
   width: 100%;
   height: 300px;
+}
+
+.panel__header :deep(.el-tag) {
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+  border-color: #fbbf24 !important;
 }
 </style>

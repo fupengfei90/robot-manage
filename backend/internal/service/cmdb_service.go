@@ -204,3 +204,263 @@ func (s *CMDBService) DeleteMilestoneEvent(id int) error {
 	}
 	return s.repo.DeleteMilestoneEvent(id)
 }
+
+// ========== 批量时间相关 ==========
+
+// GetBatchTimes 获取批量时间列表
+func (s *CMDBService) GetBatchTimes(systemName, subsysName, batchTime string, page, pageSize int) ([]model.BatchTime, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 20
+	}
+	offset := (page - 1) * pageSize
+	return s.repo.GetBatchTimes(systemName, subsysName, batchTime, pageSize, offset)
+}
+
+// GetBatchTimeByID 根据ID获取批量时间
+func (s *CMDBService) GetBatchTimeByID(id uint) (*model.BatchTime, error) {
+	return s.repo.GetBatchTimeByID(id)
+}
+
+// CreateBatchTime 创建批量时间
+func (s *CMDBService) CreateBatchTime(req *model.BatchTimeCreateRequest) (*model.BatchTime, error) {
+	batchTime := &model.BatchTime{
+		SystemName: req.SystemName,
+		SubsysName: req.SubsysName,
+		BatchTime:  req.BatchTime,
+	}
+
+	if err := s.repo.CreateBatchTime(batchTime); err != nil {
+		return nil, err
+	}
+
+	return batchTime, nil
+}
+
+// UpdateBatchTime 更新批量时间
+func (s *CMDBService) UpdateBatchTime(id uint, req *model.BatchTimeUpdateRequest) (*model.BatchTime, error) {
+	batchTime, err := s.repo.GetBatchTimeByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("批量时间不存在: %w", err)
+	}
+
+	if req.SystemName != "" {
+		batchTime.SystemName = req.SystemName
+	}
+	if req.SubsysName != "" {
+		batchTime.SubsysName = req.SubsysName
+	}
+	if req.BatchTime != "" {
+		batchTime.BatchTime = req.BatchTime
+	}
+
+	if err := s.repo.UpdateBatchTime(id, batchTime); err != nil {
+		return nil, err
+	}
+
+	return batchTime, nil
+}
+
+// DeleteBatchTime 删除批量时间
+func (s *CMDBService) DeleteBatchTime(id uint) error {
+	_, err := s.repo.GetBatchTimeByID(id)
+	if err != nil {
+		return fmt.Errorf("批量时间不存在: %w", err)
+	}
+	return s.repo.DeleteBatchTime(id)
+}
+
+// GetSystems 获取系统列表
+func (s *CMDBService) GetSystems() ([]model.System, error) {
+	return s.repo.GetSystems()
+}
+
+// GetSubsystemsBySystemID 根据系统ID获取子系统列表
+func (s *CMDBService) GetSubsystemsBySystemID(systemID uint) ([]model.Subsystem, error) {
+	return s.repo.GetSubsystemsBySystemID(systemID)
+}
+
+// ========== WB CMDB相关 ==========
+
+func (s *CMDBService) GetWBCMDBList(systemName, environment string, page, pageSize int) ([]model.WBCMDBInfo, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 20
+	}
+	offset := (page - 1) * pageSize
+	return s.repo.GetWBCMDBList(systemName, environment, pageSize, offset)
+}
+
+func (s *CMDBService) GetWBCMDBByID(id uint) (*model.WBCMDBInfo, error) {
+	return s.repo.GetWBCMDBByID(id)
+}
+
+func (s *CMDBService) CreateWBCMDB(req *model.WBCMDBInfoRequest) (*model.WBCMDBInfo, error) {
+	info := &model.WBCMDBInfo{
+		SystemName:  req.SystemName,
+		Environment: req.Environment,
+		IPAddress:   req.IPAddress,
+		Port:        req.Port,
+		Status:      req.Status,
+		Owner:       req.Owner,
+		Remark:      req.Remark,
+	}
+	if err := s.repo.CreateWBCMDB(info); err != nil {
+		return nil, err
+	}
+	return info, nil
+}
+
+func (s *CMDBService) UpdateWBCMDB(id uint, req *model.WBCMDBInfoRequest) (*model.WBCMDBInfo, error) {
+	info, err := s.repo.GetWBCMDBByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("记录不存在: %w", err)
+	}
+
+	info.SystemName = req.SystemName
+	info.Environment = req.Environment
+	info.IPAddress = req.IPAddress
+	info.Port = req.Port
+	info.Status = req.Status
+	info.Owner = req.Owner
+	info.Remark = req.Remark
+
+	if err := s.repo.UpdateWBCMDB(id, info); err != nil {
+		return nil, err
+	}
+	return info, nil
+}
+
+func (s *CMDBService) DeleteWBCMDB(id uint) error {
+	_, err := s.repo.GetWBCMDBByID(id)
+	if err != nil {
+		return fmt.Errorf("记录不存在: %w", err)
+	}
+	return s.repo.DeleteWBCMDB(id)
+}
+
+// ========== VB CMDB相关 ==========
+
+func (s *CMDBService) GetVBCMDBList(systemName, environment string, page, pageSize int) ([]model.VBCMDBInfo, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 20
+	}
+	offset := (page - 1) * pageSize
+	return s.repo.GetVBCMDBList(systemName, environment, pageSize, offset)
+}
+
+func (s *CMDBService) GetVBCMDBByID(id uint) (*model.VBCMDBInfo, error) {
+	return s.repo.GetVBCMDBByID(id)
+}
+
+func (s *CMDBService) CreateVBCMDB(req *model.VBCMDBInfoRequest) (*model.VBCMDBInfo, error) {
+	info := &model.VBCMDBInfo{
+		SystemName:  req.SystemName,
+		Environment: req.Environment,
+		IPAddress:   req.IPAddress,
+		Port:        req.Port,
+		Status:      req.Status,
+		Owner:       req.Owner,
+		Remark:      req.Remark,
+	}
+	if err := s.repo.CreateVBCMDB(info); err != nil {
+		return nil, err
+	}
+	return info, nil
+}
+
+func (s *CMDBService) UpdateVBCMDB(id uint, req *model.VBCMDBInfoRequest) (*model.VBCMDBInfo, error) {
+	info, err := s.repo.GetVBCMDBByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("记录不存在: %w", err)
+	}
+
+	info.SystemName = req.SystemName
+	info.Environment = req.Environment
+	info.IPAddress = req.IPAddress
+	info.Port = req.Port
+	info.Status = req.Status
+	info.Owner = req.Owner
+	info.Remark = req.Remark
+
+	if err := s.repo.UpdateVBCMDB(id, info); err != nil {
+		return nil, err
+	}
+	return info, nil
+}
+
+func (s *CMDBService) DeleteVBCMDB(id uint) error {
+	_, err := s.repo.GetVBCMDBByID(id)
+	if err != nil {
+		return fmt.Errorf("记录不存在: %w", err)
+	}
+	return s.repo.DeleteVBCMDB(id)
+}
+
+// ========== ITSM出包记录相关 ==========
+
+func (s *CMDBService) GetITSMPackageRecords(subsystem, status, environment string, page, pageSize int) ([]model.ITSMPackageRecord, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 20
+	}
+	offset := (page - 1) * pageSize
+	return s.repo.GetITSMPackageRecords(subsystem, status, environment, pageSize, offset)
+}
+
+func (s *CMDBService) GetITSMPackageRecordByID(id uint) (*model.ITSMPackageRecord, error) {
+	return s.repo.GetITSMPackageRecordByID(id)
+}
+
+func (s *CMDBService) CreateITSMPackageRecord(req *model.ITSMPackageRecordRequest) (*model.ITSMPackageRecord, error) {
+	record := &model.ITSMPackageRecord{
+		Subsystem:     req.Subsystem,
+		PackageName:   req.PackageName,
+		RequirementID: req.RequirementID,
+		ITSMTicket:    req.ITSMTicket,
+		Status:        req.Status,
+		Owner:         req.Owner,
+		Environment:   req.Environment,
+	}
+	if err := s.repo.CreateITSMPackageRecord(record); err != nil {
+		return nil, err
+	}
+	return record, nil
+}
+
+func (s *CMDBService) UpdateITSMPackageRecord(id uint, req *model.ITSMPackageRecordRequest) (*model.ITSMPackageRecord, error) {
+	record, err := s.repo.GetITSMPackageRecordByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("记录不存在: %w", err)
+	}
+
+	record.Subsystem = req.Subsystem
+	record.PackageName = req.PackageName
+	record.RequirementID = req.RequirementID
+	record.ITSMTicket = req.ITSMTicket
+	record.Status = req.Status
+	record.Owner = req.Owner
+	record.Environment = req.Environment
+
+	if err := s.repo.UpdateITSMPackageRecord(id, record); err != nil {
+		return nil, err
+	}
+	return record, nil
+}
+
+func (s *CMDBService) DeleteITSMPackageRecord(id uint) error {
+	_, err := s.repo.GetITSMPackageRecordByID(id)
+	if err != nil {
+		return fmt.Errorf("记录不存在: %w", err)
+	}
+	return s.repo.DeleteITSMPackageRecord(id)
+}

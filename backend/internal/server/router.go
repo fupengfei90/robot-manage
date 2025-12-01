@@ -10,7 +10,7 @@ import (
 )
 
 // NewRouter 注册所有HTTP路由。
-func NewRouter(cfg *config.AppConfig, dh *handler.DashboardHandler, ch *handler.CMDBHandler, ah *handler.AuthHandler, sth *handler.ScheduleTaskHandler, rbh *handler.RBACHandler, deh *handler.DigitalEmployeeHandler) *gin.Engine {
+func NewRouter(cfg *config.AppConfig, dh *handler.DashboardHandler, ch *handler.CMDBHandler, ah *handler.AuthHandler, sth *handler.ScheduleTaskHandler, rbh *handler.RBACHandler, deh *handler.DigitalEmployeeHandler, pph *handler.ProjectPlanHandler) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r.Use(middleware.RequestID(), middleware.AccessLog())
@@ -41,10 +41,18 @@ func NewRouter(cfg *config.AppConfig, dh *handler.DashboardHandler, ch *handler.
 		registerDeliveryRoutes(api.Group("/delivery"))
 		registerDigitalRoutes(api.Group("/digital"), deh)
 		registerSystemRoutes(api.Group("/system"), sth, rbh)
+		registerProjectPlanRoutes(api.Group("/project-plan"), pph)
 	}
 
 	r.GET("/healthz", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
+	})
+
+	// 静态文件服务
+	r.Static("/assets", "./dist/assets")
+	r.StaticFile("/", "./dist/index.html")
+	r.NoRoute(func(c *gin.Context) {
+		c.File("./dist/index.html")
 	})
 
 	return r
@@ -71,11 +79,54 @@ func registerInfoRoutes(group *gin.RouterGroup, ch *handler.CMDBHandler) {
 		milestones.DELETE("/:id", ch.DeleteMilestoneEvent)
 	}
 
+	// CMDB - 批量时间管理
+	batchTimes := group.Group("/batch-times")
+	{
+		batchTimes.GET("", ch.GetBatchTimes)
+		batchTimes.GET("/:id", ch.GetBatchTimeByID)
+		batchTimes.POST("", ch.CreateBatchTime)
+		batchTimes.PUT("/:id", ch.UpdateBatchTime)
+		batchTimes.DELETE("/:id", ch.DeleteBatchTime)
+	}
+
+	// CMDB - 系统管理
+	group.GET("/systems", ch.GetSystems)
+	group.GET("/systems/:id/subsystems", ch.GetSubsystemsBySystemID)
+
+	// CMDB - WB CMDB信息
+	wbCMDB := group.Group("/wb-cmdb")
+	{
+		wbCMDB.GET("", ch.GetWBCMDBList)
+		wbCMDB.GET("/:id", ch.GetWBCMDBByID)
+		wbCMDB.POST("", ch.CreateWBCMDB)
+		wbCMDB.PUT("/:id", ch.UpdateWBCMDB)
+		wbCMDB.DELETE("/:id", ch.DeleteWBCMDB)
+	}
+
+	// CMDB - VB CMDB信息
+	vbCMDB := group.Group("/vb-cmdb")
+	{
+		vbCMDB.GET("", ch.GetVBCMDBList)
+		vbCMDB.GET("/:id", ch.GetVBCMDBByID)
+		vbCMDB.POST("", ch.CreateVBCMDB)
+		vbCMDB.PUT("/:id", ch.UpdateVBCMDB)
+		vbCMDB.DELETE("/:id", ch.DeleteVBCMDB)
+	}
+
+	// CMDB - ITSM出包记录
+	itsmPackages := group.Group("/itsm-packages")
+	{
+		itsmPackages.GET("", ch.GetITSMPackageRecords)
+		itsmPackages.GET("/:id", ch.GetITSMPackageRecordByID)
+		itsmPackages.POST("", ch.CreateITSMPackageRecord)
+		itsmPackages.PUT("/:id", ch.UpdateITSMPackageRecord)
+		itsmPackages.DELETE("/:id", ch.DeleteITSMPackageRecord)
+	}
+
 	// 其他占位接口
 	group.GET("/cmdb/environments", placeholder("信息管理", "CMDB环境列表"))
 	group.GET("/alerts/ignores", placeholder("信息管理", "可忽略告警"))
 	group.GET("/itsm/tickets", placeholder("信息管理", "安全工单"))
-	group.GET("/batches/windows", placeholder("信息管理", "批量时间窗口"))
 }
 
 func registerDeliveryRoutes(group *gin.RouterGroup) {
@@ -175,6 +226,17 @@ func registerSystemRoutes(group *gin.RouterGroup, sth *handler.ScheduleTaskHandl
 	group.GET("/pipelines", placeholder("系统管理", "流程编排"))
 	group.GET("/models", placeholder("系统管理", "模型管理"))
 	group.GET("/mail/templates", placeholder("系统管理", "邮件模板"))
+}
+
+func registerProjectPlanRoutes(group *gin.RouterGroup, pph *handler.ProjectPlanHandler) {
+	group.GET("/modules", pph.GetAllModulesWithItems)
+	group.POST("/modules", pph.CreateModule)
+	group.PUT("/modules/:id", pph.UpdateModule)
+	group.DELETE("/modules/:id", pph.DeleteModule)
+	group.POST("/items", pph.CreateItem)
+	group.PUT("/items/:id", pph.UpdateItem)
+	group.DELETE("/items/:id", pph.DeleteItem)
+	group.POST("/items/batch", pph.BatchUpdateItems)
 }
 
 func placeholder(module, feature string) gin.HandlerFunc {

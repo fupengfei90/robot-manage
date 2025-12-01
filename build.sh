@@ -16,7 +16,7 @@ cd ..
 echo "🔨 构建后端..."
 cd backend
 go mod download
-CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o robot-manage ./cmd/main.go
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o robot-manage ./cmd/server/main.go
 cd ..
 
 # 3. 创建部署目录
@@ -57,7 +57,8 @@ chmod +x $DEPLOY_DIR/robot-manage
 
 # 7. 打包
 echo "📦 打包部署文件..."
-tar -czf ${DEPLOY_DIR}.tar.gz $DEPLOY_DIR
+tar --no-xattrs -czf ${DEPLOY_DIR}.tar.gz $DEPLOY_DIR
+rm -rf $DEPLOY_DIR
 
 echo "✅ 构建完成！"
 echo "📦 部署包: ${DEPLOY_DIR}.tar.gz"

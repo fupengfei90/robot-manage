@@ -4,7 +4,7 @@
       <div class="header__content">
         <div class="header__icon">📚</div>
         <div>
-          <h2 class="panel__title">{{ t('dashboard.knowledge.title') }}</h2>
+          <h2 class="panel__title">{{ t('dashboard.knowledge.title') }} <el-tag size="small" type="warning">TODO</el-tag></h2>
         </div>
       </div>
       <el-tag type="warning" class="recall-tag">
@@ -14,7 +14,7 @@
     </div>
     <div class="panel__columns">
       <section class="section-card">
-        <h3 class="section-title">{{ t('dashboard.knowledge.recentUpdates') }}</h3>
+        <h3 class="section-title">{{ t('dashboard.knowledge.recentUpdates') }} <el-tag size="small" type="warning">TODO</el-tag></h3>
         <el-timeline class="custom-timeline">
           <el-timeline-item
             v-for="(item, index) in knowledge.recentUpdates"
@@ -33,7 +33,7 @@
         </el-timeline>
       </section>
       <section class="section-card">
-        <h3 class="section-title">{{ t('dashboard.knowledge.hotTopics') }}</h3>
+        <h3 class="section-title">{{ t('dashboard.knowledge.hotTopics') }} <el-tag size="small" type="warning">TODO</el-tag></h3>
         <div 
           class="hot-item card-hover" 
           v-for="(item, index) in knowledge.hotTopics" 
@@ -106,6 +106,10 @@ defineProps<{ knowledge: KnowledgeSnapshot }>()
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.panel__title :deep(.el-tag) {
+  -webkit-text-fill-color: #92400e !important;
 }
 
 .recall-tag {
@@ -259,5 +263,11 @@ defineProps<{ knowledge: KnowledgeSnapshot }>()
   .panel__columns {
     grid-template-columns: 1fr;
   }
+}
+
+:deep(.el-tag) {
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+  border-color: #fbbf24 !important;
 }
 </style>

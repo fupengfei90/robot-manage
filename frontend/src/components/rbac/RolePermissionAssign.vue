@@ -15,10 +15,17 @@
 
     <div class="permission-selection">
       <h4>选择权限</h4>
+      <el-input
+        v-model="searchText"
+        placeholder="搜索权限"
+        clearable
+        style="margin-bottom: 12px"
+      />
       <el-tree
         ref="treeRef"
         :data="permissionTree"
         :props="treeProps"
+        :filter-node-method="filterNode"
         show-checkbox
         node-key="key"
         :default-checked-keys="selectedPermissionKeys"
@@ -75,6 +82,7 @@ const emit = defineEmits<Emits>()
 
 const visible = ref(false)
 const loading = ref(false)
+const searchText = ref('')
 const treeRef = ref<InstanceType<typeof ElTree>>()
 const permissionTree = ref<TreeNode[]>([])
 const selectedPermissionKeys = ref<string[]>([])
@@ -82,6 +90,16 @@ const selectedPermissionKeys = ref<string[]>([])
 const treeProps = {
   children: 'children',
   label: 'intent'
+}
+
+const filterNode = (value: string, data: TreeNode) => {
+  if (!value) return true
+  const searchValue = value.toLowerCase()
+  return (
+    data.intent?.toLowerCase().includes(searchValue) ||
+    data.intent2?.toLowerCase().includes(searchValue) ||
+    data.description?.toLowerCase().includes(searchValue)
+  )
 }
 
 const buildTreeData = (nodes: PermissionTreeNode[]): TreeNode[] => {
@@ -105,9 +123,13 @@ const loadPermissionTree = async () => {
 watch(() => props.modelValue, (val) => {
   visible.value = val
   if (val && props.role) {
-    // 设置已选中的权限
     selectedPermissionKeys.value = props.role.permissions?.map(permission => `permission_${permission.id}`) || []
+    searchText.value = ''
   }
+})
+
+watch(searchText, (val) => {
+  treeRef.value?.filter(val)
 })
 
 watch(visible, (val) => {
@@ -185,18 +207,32 @@ onMounted(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding-right: var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-md) var(--spacing-xs) 0;
+  line-height: 1.5;
 }
 
 .node-label {
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: var(--spacing-xs);
+  margin-bottom: 4px;
+  word-break: break-all;
 }
 
 .node-description {
   color: var(--text-secondary);
   font-size: 0.875rem;
+  word-break: break-all;
+}
+
+.permission-tree :deep(.el-tree-node__content) {
+  height: auto;
+  min-height: 40px;
+  padding: 4px 0;
+  align-items: flex-start;
+}
+
+.permission-tree :deep(.el-checkbox) {
+  margin-top: 8px;
 }
 
 .dialog-footer {

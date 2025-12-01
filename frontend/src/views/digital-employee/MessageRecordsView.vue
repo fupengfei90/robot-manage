@@ -107,14 +107,15 @@
     </el-card>
 
     <!-- 详情对话框 -->
-    <el-dialog v-model="dialogVisible" title="会话详情" width="800px" class="custom-dialog">
+    <el-dialog v-model="dialogVisible" title="会话详情" width="1100px" class="custom-dialog">
       <div v-if="currentRecord" class="message-detail">
-        <el-descriptions :column="1" border>
+        <el-descriptions :column="1" border label-width="120px">
           <el-descriptions-item label="消息ID">{{ currentRecord.msg_id }}</el-descriptions-item>
           <el-descriptions-item label="会话ID">{{ currentRecord.conversation_id }}</el-descriptions-item>
           <el-descriptions-item label="用户">{{ currentRecord.request_user_name }}</el-descriptions-item>
           <el-descriptions-item label="用户ID">{{ currentRecord.request_user_id }}</el-descriptions-item>
           <el-descriptions-item label="创建时间">{{ formatDateTime(currentRecord.created_at) }}</el-descriptions-item>
+          <el-descriptions-item label="备注">{{ currentRecord.extra_data || '-' }}</el-descriptions-item>
         </el-descriptions>
         <div class="message-content">
           <h4>用户输入：</h4>
@@ -129,6 +130,9 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useCommon } from '../../composables/useCommon'
+
+const { t } = useCommon()
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   getMessageRecords,

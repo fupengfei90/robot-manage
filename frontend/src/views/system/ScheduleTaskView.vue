@@ -2,23 +2,23 @@
   <div class="schedule-task-view">
     <div class="view-header glass-effect animate-fade-in-down">
       <div class="header-content">
-        <h1 class="view-title">调度任务管理</h1>
-        <p class="view-subtitle">管理系统中的定时任务，支持创建、编辑、启用/停用和立即执行等操作</p>
+        <h1 class="view-title">{{ t('system.task.title') }}</h1>
+        <p class="view-subtitle">{{ t('system.task.subtitle') }}</p>
       </div>
       <div class="header-actions">
         <el-button type="primary" @click="handleCreate" class="create-btn hover-lift">
-          <span>➕</span> 新增任务
+          <span>➕</span> {{ t('system.task.addTask') }}
         </el-button>
         <el-dropdown @command="handleBatchOperation" :disabled="!selectedTasks.length">
           <el-button :disabled="!selectedTasks.length" class="batch-btn">
-            批量操作
+            {{ t('system.task.batchOperations') }}
             <el-icon class="el-icon--right"><ArrowDown /></el-icon>
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="enable">批量启用</el-dropdown-item>
-              <el-dropdown-item command="disable">批量停用</el-dropdown-item>
-              <el-dropdown-item command="delete" divided>批量删除</el-dropdown-item>
+              <el-dropdown-item command="enable">{{ t('system.task.batchEnable') }}</el-dropdown-item>
+              <el-dropdown-item command="disable">{{ t('system.task.batchDisable') }}</el-dropdown-item>
+              <el-dropdown-item command="delete" divided>{{ t('system.task.batchDelete') }}</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -43,7 +43,7 @@
         
         <el-table-column prop="id" label="ID" width="80" sortable="custom" />
         
-        <el-table-column prop="name" label="任务名称" min-width="150" show-overflow-tooltip>
+        <el-table-column prop="name" :label="t('system.task.taskName')" min-width="200" show-overflow-tooltip>
           <template #default="{ row }">
             <div class="task-name">
               <span>{{ row.name }}</span>
@@ -54,7 +54,7 @@
           </template>
         </el-table-column>
         
-        <el-table-column prop="status_text" label="状态" width="100">
+        <el-table-column prop="status_text" :label="t('system.task.status')" width="100">
           <template #default="{ row }">
             <el-switch
               :model-value="row.active"
@@ -66,32 +66,26 @@
           </template>
         </el-table-column>
         
-        <el-table-column prop="cron_desc" label="执行时间" min-width="120" show-overflow-tooltip :show-overflow-tooltip="{ popperClass: 'table-tooltip' }" />
+        <el-table-column prop="cron_desc" :label="t('system.task.executionTime')" min-width="140" show-overflow-tooltip :show-overflow-tooltip="{ popperClass: 'table-tooltip' }" />
         
-        <el-table-column prop="next_run_time" label="下次执行" width="160">
+        <el-table-column prop="next_run_time" :label="t('system.task.nextExecution')" width="140">
           <template #default="{ row }">
             <span v-if="row.next_run_time" class="next-run-time">
               {{ formatDateTime(row.next_run_time) }}
             </span>
-            <el-text v-else type="info" size="small">已停用</el-text>
+            <el-text v-else type="info" size="small">{{ t('system.task.disabled') }}</el-text>
           </template>
         </el-table-column>
         
-        <el-table-column prop="dcn" label="数据中心" width="100">
-          <template #default="{ row }">
-            <el-tag type="info" size="small">{{ row.dcn }}</el-tag>
-          </template>
-        </el-table-column>
+
         
-        <el-table-column prop="workflow" label="工作流ID" width="120" show-overflow-tooltip />
-        
-        <el-table-column prop="updated_at" label="更新时间" width="160" sortable="custom">
+        <el-table-column prop="updated_at" :label="t('system.task.updateTime')" width="140" sortable="custom">
           <template #default="{ row }">
             {{ formatDateTime(row.updated_at) }}
           </template>
         </el-table-column>
         
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column :label="t('system.task.actions')" width="120" fixed="right">
           <template #default="{ row }">
             <el-button
               link
@@ -100,10 +94,10 @@
               :disabled="row.active === 0"
               :loading="executeLoading[row.id]"
             >
-              执行
+              {{ t('system.task.executeNow') }}
             </el-button>
             <el-button link type="primary" @click="handleEdit(row)">
-              编辑
+              {{ t('system.task.edit') }}
             </el-button>
             <el-button
               link
@@ -111,7 +105,7 @@
               @click="handleDelete(row)"
               :loading="deleteLoading[row.id]"
             >
-              删除
+              {{ t('system.task.delete') }}
             </el-button>
           </template>
         </el-table-column>
@@ -142,6 +136,9 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useCommon } from '../../composables/useCommon'
+
+const { t } = useCommon()
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, ArrowDown } from '@element-plus/icons-vue'
 import TaskFilter from '@/components/TaskFilter.vue'
@@ -180,9 +177,6 @@ const queryParams = ref<ScheduleTaskQuery>({})
 
 // 分类标签映射
 const categoryLabels: Record<string, string> = {
-  'rota': '值班提醒',
-  'weekly-report': '周报生成',
-  'version-align': '版本通知'
 }
 
 const getCategoryLabel = (category: string) => {
@@ -230,7 +224,7 @@ const loadData = async () => {
     console.log('总数:', pagination.total)
   } catch (error) {
     console.error('加载数据失败:', error)
-    ElMessage.error('加载数据失败')
+    ElMessage.error(t('system.task.loadDataFailed'))
   } finally {
     loading.value = false
   }
@@ -288,23 +282,23 @@ const handleEdit = (task: ScheduleTask) => {
 const handleDelete = async (task: ScheduleTask) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除任务"${task.name}"吗？删除后无法恢复。`,
-      '确认删除',
+      t('system.task.deleteConfirmMsg').replace('{name}', task.name),
+      t('system.task.confirmDelete'),
       {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+        confirmButtonText: t('system.task.confirm'),
+        cancelButtonText: t('system.task.cancel'),
         type: 'warning'
       }
     )
     
     deleteLoading.value[task.id] = true
     await deleteScheduleTask(task.id)
-    ElMessage.success('删除成功')
+    ElMessage.success(t('system.task.deleteSuccess'))
     loadData()
   } catch (error) {
     if (error !== 'cancel') {
       console.error('删除失败:', error)
-      ElMessage.error('删除失败')
+      ElMessage.error(t('system.task.deleteFailed'))
     }
   } finally {
     deleteLoading.value[task.id] = false
@@ -317,12 +311,13 @@ const handleStatusChange = async (task: ScheduleTask, active: number) => {
     statusLoading.value[task.id] = true
     await updateScheduleTaskStatus(task.id, active)
     task.active = active
-    task.status_text = active === 1 ? '启用' : '停用'
-    ElMessage.success(`任务已${active === 1 ? '启用' : '停用'}`)
+    task.status_text = active === 1 ? t('common.enabled') : t('common.disabled')
+    const status = active === 1 ? t('common.enabled') : t('common.disabled')
+    ElMessage.success(t('system.task.statusUpdateSuccess').replace('{status}', status))
     loadData() // 重新加载以更新下次执行时间
   } catch (error) {
     console.error('状态更新失败:', error)
-    ElMessage.error('状态更新失败')
+    ElMessage.error(t('system.task.statusUpdateFailed'))
   } finally {
     statusLoading.value[task.id] = false
   }
@@ -333,10 +328,10 @@ const handleExecute = async (task: ScheduleTask) => {
   try {
     executeLoading.value[task.id] = true
     await executeScheduleTask(task.id)
-    ElMessage.success('任务执行成功')
+    ElMessage.success(t('system.task.executeSuccess'))
   } catch (error) {
     console.error('任务执行失败:', error)
-    ElMessage.error('任务执行失败')
+    ElMessage.error(t('system.task.executeFailed'))
   } finally {
     executeLoading.value[task.id] = false
   }
@@ -347,21 +342,24 @@ const handleBatchOperation = async (command: string) => {
   if (!selectedTasks.value.length) return
   
   const operationMap: Record<string, string> = {
-    enable: '启用',
-    disable: '停用',
-    delete: '删除'
+    enable: t('system.task.batchEnable'),
+    disable: t('system.task.batchDisable'),
+    delete: t('system.task.batchDelete')
   }
   
   const operation = operationMap[command]
   if (!operation) return
   
   try {
+    const message = t('system.task.batchOperationConfirm')
+      .replace('{operation}', operation)
+      .replace('{count}', selectedTasks.value.length.toString())
     await ElMessageBox.confirm(
-      `确定要${operation}选中的 ${selectedTasks.value.length} 个任务吗？`,
-      `确认${operation}`,
+      message,
+      t('common.confirm'),
       {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+        confirmButtonText: t('system.task.confirm'),
+        cancelButtonText: t('system.task.cancel'),
         type: command === 'delete' ? 'warning' : 'info'
       }
     )
@@ -372,13 +370,13 @@ const handleBatchOperation = async (command: string) => {
       operation: command as 'enable' | 'disable' | 'delete'
     })
     
-    ElMessage.success(`批量${operation}成功`)
+    ElMessage.success(t('system.task.batchOperationSuccess').replace('{operation}', operation))
     selectedTasks.value = []
     loadData()
   } catch (error) {
     if (error !== 'cancel') {
-      console.error(`批量${operation}失败:`, error)
-      ElMessage.error(`批量${operation}失败`)
+      console.error(`批量操作失败:`, error)
+      ElMessage.error(t('system.task.batchOperationFailed').replace('{operation}', operation))
     }
   }
 }
@@ -424,18 +422,36 @@ onMounted(() => {
   background: transparent;
 }
 
+.custom-table :deep(.el-table__header) {
+  font-weight: 600;
+}
+
 .custom-table :deep(.el-table__row) {
   transition: all var(--transition-base);
 }
 
 .custom-table :deep(.el-table__row:hover) {
-  background: var(--bg-glass-hover);
+  transform: translateY(-1px);
+}
+
+.custom-table :deep(.el-table__cell) {
+  padding: 12px 0;
+}
+
+.custom-table :deep(.el-button + .el-button) {
+  margin-left: 8px;
+}
+
+.custom-table :deep(.el-switch) {
+  --el-switch-on-color: var(--accent-color);
+  --el-switch-off-color: rgba(255, 255, 255, 0.2);
 }
 
 .task-name {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .category-tag {
@@ -445,6 +461,16 @@ onMounted(() => {
 .next-run-time {
   color: var(--accent-color);
   font-weight: 500;
+  font-size: 13px;
+}
+
+.custom-table :deep(.el-button--text) {
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+.custom-table :deep(.el-button--text.is-disabled) {
+  opacity: 0.4;
 }
 
 .pagination-container {

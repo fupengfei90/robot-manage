@@ -2,7 +2,7 @@
   <div class="rbac-view">
     <div class="view-header glass-effect animate-fade-in-down">
       <div class="header-content">
-        <h1 class="view-title">用户角色权限管理</h1>
+        <h1 class="view-title">{{ t('system.rbac.title') }}</h1>
         <p class="view-subtitle">管理系统用户、角色和权限，实现基于角色的访问控制</p>
       </div>
     </div>
@@ -10,13 +10,13 @@
     <!-- 标签页 -->
     <el-card shadow="never" class="tabs-card glass-effect animate-fade-in">
       <el-tabs v-model="activeTab" class="rbac-tabs">
-        <el-tab-pane label="用户管理" name="users">
+        <el-tab-pane :label="t('system.rbac.user')" name="users">
           <UserManagement />
         </el-tab-pane>
-        <el-tab-pane label="角色管理" name="roles">
+        <el-tab-pane :label="t('system.rbac.role')" name="roles">
           <RoleManagement />
         </el-tab-pane>
-        <el-tab-pane label="权限管理" name="permissions">
+        <el-tab-pane :label="t('system.rbac.permission')" name="permissions">
           <PermissionManagement />
         </el-tab-pane>
       </el-tabs>
@@ -29,7 +29,9 @@ import { ref } from 'vue'
 import UserManagement from '@/components/rbac/UserManagement.vue'
 import RoleManagement from '@/components/rbac/RoleManagement.vue'
 import PermissionManagement from '@/components/rbac/PermissionManagement.vue'
+import { useCommon } from '../../composables/useCommon'
 
+const { t } = useCommon()
 const activeTab = ref('users')
 </script>
 

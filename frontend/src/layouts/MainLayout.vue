@@ -34,6 +34,7 @@
         :background-color="themeStore.mode === 'dark' ? 'transparent' : 'transparent'"
         :text-color="themeStore.mode === 'dark' ? 'var(--text-tertiary)' : 'var(- -text-secondary)'"
         :active-text-color="'var(--accent-color)'"
+        @select="handleMenuSelect"
       >
         <el-menu-item index="dashboard" class="menu-item" @click="$router.push('/')">
           <template #title>
@@ -58,6 +59,30 @@
               <span>{{ t('layout.milestone') }}</span>
             </template>
           </el-menu-item>
+          <el-menu-item index="batchTime" @click="$router.push('/cmdb/batch-time')">
+            <template #title>
+              <span class="menu-item__icon">⏱️</span>
+              <span>{{ t('layout.batchTime') }}</span>
+            </template>
+          </el-menu-item>
+          <el-menu-item index="wbCMDB" @click="$router.push('/cmdb/wb-cmdb')">
+            <template #title>
+              <span class="menu-item__icon">🖥️</span>
+              <span>WB CMDB</span>
+            </template>
+          </el-menu-item>
+          <el-menu-item index="vbCMDB" @click="$router.push('/cmdb/vb-cmdb')">
+            <template #title>
+              <span class="menu-item__icon">💻</span>
+              <span>VB CMDB</span>
+            </template>
+          </el-menu-item>
+          <el-menu-item index="itsmPackage" @click="$router.push('/cmdb/itsm-package')">
+            <template #title>
+              <span class="menu-item__icon">📦</span>
+              <span>ITSM出包记录</span>
+            </template>
+          </el-menu-item>
         </el-sub-menu>
         <el-menu-item index="delivery" class="menu-item">
           <template #title>
@@ -73,13 +98,13 @@
           <el-menu-item index="messageRecords" @click="$router.push('/digital/message-records')">
             <template #title>
               <span class="menu-item__icon">💬</span>
-              <span>历史会话记录</span>
+              <span>{{ t('layout.messageRecords') }}</span>
             </template>
           </el-menu-item>
           <el-menu-item index="exportRecords" @click="$router.push('/digital/export-records')">
             <template #title>
               <span class="menu-item__icon">📤</span>
-              <span>服务回传记录</span>
+              <span>{{ t('layout.exportRecords') }}</span>
             </template>
           </el-menu-item>
         </el-sub-menu>
@@ -91,16 +116,40 @@
           <el-menu-item index="scheduleTask" @click="$router.push('/system/schedule-tasks')">
             <template #title>
               <span class="menu-item__icon">⏰</span>
-              <span>调度任务管理</span>
+              <span>{{ t('layout.scheduleTask') }}</span>
             </template>
           </el-menu-item>
           <el-menu-item index="rbac" @click="$router.push('/system/rbac')">
             <template #title>
               <span class="menu-item__icon">👥</span>
-              <span>用户角色权限</span>
+              <span>{{ t('layout.rbac') }}</span>
+            </template>
+          </el-menu-item>
+          <el-menu-item index="weeklyReport" @click="$router.push('/system/weekly-report')">
+            <template #title>
+              <span class="menu-item__icon">📄</span>
+              <span>{{ t('layout.weeklyReport') }}</span>
             </template>
           </el-menu-item>
         </el-sub-menu>
+        <el-menu-item index="digitalHuman" class="menu-item" @click="$router.push('/system/digital-human')">
+          <template #title>
+            <span class="menu-item__icon">👤</span>
+            <span>{{ t('layout.digitalHuman') }}</span>
+          </template>
+        </el-menu-item>
+        <el-menu-item index="userGuide" class="menu-item" @click="router.push('/help/user-guide')">
+          <template #title>
+            <span class="menu-item__icon">❓</span>
+            <span>{{ t('layout.userGuide') }}</span>
+          </template>
+        </el-menu-item>
+        <el-menu-item index="projectPlan" class="menu-item" @click="router.push('/help/project-plan')">
+          <template #title>
+            <span class="menu-item__icon">📊</span>
+            <span>{{ t('layout.projectPlan') }}</span>
+          </template>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     
@@ -145,7 +194,7 @@
               <el-dropdown-menu>
                 <el-dropdown-item command="logout" divided>
                   <el-icon><User /></el-icon>
-                  退出登录
+                  {{ t('layout.logout') }}
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -181,23 +230,46 @@ const isCollapsed = ref(false)
 
 const themeIcon = computed(() => themeStore.mode === 'dark' ? Sunny : Moon)
 
+const handleMenuSelect = (index: string) => {
+  const routes: Record<string, string> = {
+    dashboard: '/',
+    dutySchedule: '/cmdb/duty',
+    milestone: '/cmdb/milestone',
+    batchTime: '/cmdb/batch-time',
+    wbCMDB: '/cmdb/wb-cmdb',
+    vbCMDB: '/cmdb/vb-cmdb',
+    itsmPackage: '/cmdb/itsm-package',
+    messageRecords: '/digital/message-records',
+    exportRecords: '/digital/export-records',
+    scheduleTask: '/system/schedule-tasks',
+    rbac: '/system/rbac',
+    projectPlan: '/help/project-plan',
+    weeklyReport: '/system/weekly-report',
+    userGuide: '/help/user-guide',
+    digitalHuman: '/system/digital-human'
+  }
+  if (routes[index]) {
+    router.push(routes[index])
+  }
+}
+
 const handleLogout = async () => {
   try {
     await ElMessageBox.confirm(
-      '确定要退出登录吗？',
-      '确认退出',
+      t('layout.confirmLogout'),
+      t('layout.logout'),
       {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning'
       }
     )
     await authStore.logout()
-    ElMessage.success('退出成功')
+    ElMessage.success(t('common.operationSuccess'))
     router.push('/login')
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('退出失败')
+      ElMessage.error(t('auth.loginFailed'))
     }
   }
 }

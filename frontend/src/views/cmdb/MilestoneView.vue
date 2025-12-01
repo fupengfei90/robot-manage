@@ -2,18 +2,24 @@
   <div class="milestone-view">
     <div class="view-header glass-effect animate-fade-in-down">
       <div class="header-content">
-        <h1 class="view-title">大事记管理</h1>
+        <h1 class="view-title">{{ t('cmdb.milestone.title') }}</h1>
         <p class="view-subtitle">记录和管理重要事件信息</p>
       </div>
-      <el-button type="primary" @click="handleCreate" class="create-btn hover-lift">
-        <span>➕</span> 新增大事记
-      </el-button>
+      <div class="header-actions">
+        <el-radio-group v-model="viewMode" size="default">
+          <el-radio-button value="list">列表视图</el-radio-button>
+          <el-radio-button value="calendar">月历视图</el-radio-button>
+        </el-radio-group>
+        <el-button type="primary" @click="handleCreate" class="create-btn hover-lift">
+          <span>➕</span> {{ t('cmdb.milestone.addEvent') }}
+        </el-button>
+      </div>
     </div>
 
     <!-- 搜索筛选 -->
     <el-card shadow="never" class="filter-card glass-effect animate-fade-in">
       <el-form :inline="true" :model="filters" class="filter-form">
-        <el-form-item label="开始日期">
+        <el-form-item :label="t('cmdb.milestone.eventDate')">
           <el-date-picker
             v-model="filters.startDate"
             type="date"
@@ -23,7 +29,7 @@
             clearable
           />
         </el-form-item>
-        <el-form-item label="结束日期">
+        <el-form-item :label="t('cmdb.milestone.eventDate')">
           <el-date-picker
             v-model="filters.endDate"
             type="date"
@@ -33,24 +39,47 @@
             clearable
           />
         </el-form-item>
-        <el-form-item label="事件内容">
+        <el-form-item :label="t('cmdb.milestone.eventContent')">
           <el-input v-model="filters.eventContent" placeholder="搜索事件内容" clearable style="width: 200px" />
         </el-form-item>
-        <el-form-item label="状态">
+        <el-form-item :label="t('common.status')">
           <el-select v-model="filters.isActive" placeholder="全部" clearable style="width: 120px">
             <el-option label="激活" :value="true" />
             <el-option label="禁用" :value="false" />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSearch">查询</el-button>
-          <el-button @click="handleReset">重置</el-button>
+          <el-button type="primary" @click="handleSearch">{{ t('common.search') }}</el-button>
+          <el-button @click="handleReset">{{ t('common.reset') }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
+    <!-- 月历视图 -->
+    <el-card v-if="viewMode === 'calendar'" shadow="never" class="calendar-card glass-effect animate-fade-in-up">
+      <MonthCalendar :items="calendarItems">
+        <template #default="{ items }">
+          <div v-for="item in items" :key="item.id" class="calendar-event">
+            <el-popover placement="top" :width="400" trigger="hover">
+              <template #reference>
+                <div class="event-content-box">
+                  <div class="event-text">{{ item.eventContent }}</div>
+                </div>
+              </template>
+              <div>
+                <div style="margin-bottom: 8px; font-weight: 600; color: var(--el-color-primary)">
+                  {{ formatDate(item.eventDate) }} {{ item.dayOfWeek }}
+                </div>
+                <div style="line-height: 1.8; color: var(--text-primary)">{{ item.eventContent }}</div>
+              </div>
+            </el-popover>
+          </div>
+        </template>
+      </MonthCalendar>
+    </el-card>
+
     <!-- 数据表格 -->
-    <el-card shadow="never" class="table-card glass-effect animate-fade-in-up">
+    <el-card v-else shadow="never" class="table-card glass-effect animate-fade-in-up">
       <el-table
         :data="tableData"
         v-loading="loading"
@@ -59,7 +88,7 @@
         style="width: 100%"
       >
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="eventDate" label="事件日期" width="160">
+        <el-table-column prop="eventDate" :label="t('cmdb.milestone.eventDate')" width="160">
           <template #default="{ row }">
             <div>
               <span class="date-cell">{{ formatDate(row.eventDate) }}</span>
@@ -69,12 +98,12 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="eventContent" label="事件内容" min-width="400">
+        <el-table-column prop="eventContent" :label="t('cmdb.milestone.eventContent')" min-width="400">
           <template #default="{ row }">
             <div class="content-cell">{{ row.eventContent }}</div>
           </template>
         </el-table-column>
-        <el-table-column prop="isActive" label="状态" width="100">
+        <el-table-column prop="isActive" :label="t('common.status')" width="100">
           <template #default="{ row }">
             <el-tag :type="row.isActive ? 'success' : 'info'">
               {{ row.isActive ? '激活' : '禁用' }}
@@ -91,10 +120,10 @@
             {{ formatDateTime(row.updatedAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column :label="t('common.actions')" width="180" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+            <el-button link type="primary" @click="handleEdit(row)">{{ t('common.edit') }}</el-button>
+            <el-button link type="danger" @click="handleDelete(row)">{{ t('common.delete') }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -152,9 +181,9 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" @click="handleSubmit" :loading="submitting">
-          确定
+          {{ t('common.confirm') }}
         </el-button>
       </template>
     </el-dialog>
@@ -162,7 +191,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
+import { useCommon } from '../../composables/useCommon'
+
+const { t } = useCommon()
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import {
@@ -176,7 +208,9 @@ import type {
   MilestoneEventCreateRequest,
   MilestoneEventUpdateRequest
 } from '../../types/cmdb'
+import MonthCalendar from '../../components/MonthCalendar.vue'
 
+const viewMode = ref<'list' | 'calendar'>('calendar')
 const loading = ref(false)
 const submitting = ref(false)
 const dialogVisible = ref(false)
@@ -213,7 +247,24 @@ const formRules: FormRules = {
   ]
 }
 
-const dialogTitle = computed(() => (isEdit.value ? '编辑大事记' : '新增大事记'))
+const dialogTitle = computed(() => (isEdit.value ? t('cmdb.milestone.editEvent') : t('cmdb.milestone.addEvent')))
+
+const calendarItems = computed(() => {
+  return tableData.value.map(item => ({
+    ...item,
+    date: formatDate(item.eventDate)
+  }))
+})
+
+watch(viewMode, (newMode) => {
+  if (newMode === 'calendar') {
+    pagination.pageSize = 1000
+    loadData()
+  } else {
+    pagination.pageSize = 20
+    loadData()
+  }
+})
 
 // 加载数据
 const loadData = async () => {
@@ -371,6 +422,12 @@ onMounted(() => {
   border-radius: var(--radius-xl);
 }
 
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
 .create-btn {
   padding: var(--spacing-md) var(--spacing-xl);
   border-radius: var(--radius-md);
@@ -383,6 +440,43 @@ onMounted(() => {
 
 .filter-card :deep(.el-card__body) {
   padding: var(--spacing-md);
+}
+
+.calendar-card {
+  border-radius: var(--radius-xl);
+}
+
+.calendar-card :deep(.el-card__body) {
+  padding: var(--spacing-md);
+}
+
+.calendar-event {
+  margin-bottom: 6px;
+}
+
+.event-content-box {
+  cursor: pointer;
+  padding: 6px 8px;
+  background: linear-gradient(135deg, rgba(103, 194, 58, 0.1) 0%, rgba(103, 194, 58, 0.05) 100%);
+  border-radius: 4px;
+  border-left: 3px solid var(--el-color-success);
+  transition: all 0.2s;
+}
+
+.event-content-box:hover {
+  background: linear-gradient(135deg, rgba(103, 194, 58, 0.15) 0%, rgba(103, 194, 58, 0.08) 100%);
+  transform: translateX(2px);
+}
+
+.event-text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .filter-form {

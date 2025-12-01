@@ -45,11 +45,13 @@ func Build(configPath string) (*Application, error) {
 	app := &Application{Config: cfg}
 
 	if cfg.Database.DSN != "" {
-		if db, err := database.New(cfg.Database); err != nil {
-			logger.L().Warn("初始化数据库失败", zap.Error(err))
-		} else {
-			app.DB = db
+		db, err := database.New(cfg.Database)
+		if err != nil {
+			return nil, fmt.Errorf("初始化数据库失败: %w", err)
 		}
+		app.DB = db
+	} else {
+		return nil, fmt.Errorf("数据库配置为空")
 	}
 
 	if cfg.Redis.Addr != "" {
@@ -98,7 +100,11 @@ func Build(configPath string) (*Application, error) {
 	digitalEmployeeSvc := service.NewDigitalEmployeeService(digitalEmployeeRepo)
 	digitalEmployeeHandler := handler.NewDigitalEmployeeHandler(digitalEmployeeSvc)
 
-	httpServer := server.New(cfg, dashboardHandler, cmdbHandler, authHandler, scheduleTaskHandler, rbacHandler, digitalEmployeeHandler)
+	projectPlanRepo := repository.NewProjectPlanRepository(app.DB)
+	projectPlanSvc := service.NewProjectPlanService(projectPlanRepo)
+	projectPlanHandler := handler.NewProjectPlanHandler(projectPlanSvc)
+
+	httpServer := server.New(cfg, dashboardHandler, cmdbHandler, authHandler, scheduleTaskHandler, rbacHandler, digitalEmployeeHandler, projectPlanHandler)
 
 	app.Server = httpServer
 

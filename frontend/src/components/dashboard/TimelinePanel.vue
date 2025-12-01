@@ -33,7 +33,7 @@
         </el-steps>
       </section>
       <section class="section-card">
-        <h3 class="section-title">{{ t('dashboard.timeline.deployPlans') }}</h3>
+        <h3 class="section-title">{{ t('dashboard.timeline.deployPlans') }} <el-tag size="small" type="info">TODO</el-tag></h3>
         <el-table 
           :data="timeline.deployPlans" 
           size="small"
@@ -263,5 +263,11 @@ const goToMilestone = () => {
   .panel__content {
     grid-template-columns: 1fr;
   }
+}
+
+:deep(.el-tag) {
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+  border-color: #fbbf24 !important;
 }
 </style>

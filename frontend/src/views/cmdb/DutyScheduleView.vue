@@ -2,18 +2,24 @@
   <div class="duty-schedule-view">
     <div class="view-header glass-effect animate-fade-in-down">
       <div class="header-content">
-        <h1 class="view-title">值班管理</h1>
-        <p class="view-subtitle">管理WB和FB值班人员信息</p>
+        <h1 class="view-title">{{ t('cmdb.duty.title') }}</h1>
+        <p class="view-subtitle">{{ t('cmdb.duty.subtitle') }}</p>
       </div>
-      <el-button type="primary" @click="handleCreate" class="create-btn hover-lift">
-        <span>➕</span> 新增值班
-      </el-button>
+      <div class="header-actions">
+        <el-radio-group v-model="viewMode" size="default">
+          <el-radio-button value="list">列表视图</el-radio-button>
+          <el-radio-button value="calendar">月历视图</el-radio-button>
+        </el-radio-group>
+        <el-button type="primary" @click="handleCreate" class="create-btn hover-lift">
+          <span>➕</span> {{ t('cmdb.duty.addSchedule') }}
+        </el-button>
+      </div>
     </div>
 
     <!-- 搜索筛选 -->
     <el-card shadow="never" class="filter-card glass-effect animate-fade-in">
       <el-form :inline="true" :model="filters" class="filter-form">
-        <el-form-item label="开始日期">
+        <el-form-item :label="t('cmdb.duty.startDate')">
           <el-date-picker
             v-model="filters.startDate"
             type="date"
@@ -23,7 +29,7 @@
             clearable
           />
         </el-form-item>
-        <el-form-item label="结束日期">
+        <el-form-item :label="t('cmdb.duty.endDate')">
           <el-date-picker
             v-model="filters.endDate"
             type="date"
@@ -33,18 +39,36 @@
             clearable
           />
         </el-form-item>
-        <el-form-item label="值班人">
+        <el-form-item :label="t('cmdb.duty.staffName')">
           <el-input v-model="filters.staffName" placeholder="输入值班人姓名" clearable style="width: 150px" />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSearch">查询</el-button>
-          <el-button @click="handleReset">重置</el-button>
+          <el-button type="primary" @click="handleSearch">{{ t('common.search') }}</el-button>
+          <el-button @click="handleReset">{{ t('common.reset') }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
+    <!-- 月历视图 -->
+    <el-card v-if="viewMode === 'calendar'" shadow="never" class="calendar-card glass-effect animate-fade-in-up">
+      <MonthCalendar :items="calendarItems">
+        <template #default="{ items }">
+          <div v-for="item in items" :key="item.id" class="calendar-item">
+            <div class="duty-row">
+              <span class="duty-label">WB:</span>
+              <span class="duty-name">{{ item.wbStaffName }}</span>
+            </div>
+            <div class="duty-row">
+              <span class="duty-label">FB:</span>
+              <span class="duty-name">{{ item.fbStaffName }}</span>
+            </div>
+          </div>
+        </template>
+      </MonthCalendar>
+    </el-card>
+
     <!-- 数据表格 -->
-    <el-card shadow="never" class="table-card glass-effect animate-fade-in-up">
+    <el-card v-else shadow="never" class="table-card glass-effect animate-fade-in-up">
       <el-table
         :data="tableData"
         v-loading="loading"
@@ -53,30 +77,30 @@
         style="width: 100%"
       >
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="dutyDate" label="值班日期" width="140">
+        <el-table-column prop="dutyDate" :label="t('cmdb.duty.dutyDate')" width="140">
           <template #default="{ row }">
             <span class="date-cell">{{ formatDate(row.dutyDate) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="wbStaffName" label="WB值班人员" min-width="200">
+        <el-table-column prop="wbStaffName" :label="t('cmdb.duty.wbStaff')" min-width="200">
           <template #default="{ row }">
             <el-tag type="primary" class="staff-tag">{{ row.wbStaffName }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="fbStaffName" label="FB值班人员" min-width="200">
+        <el-table-column prop="fbStaffName" :label="t('cmdb.duty.fbStaff')" min-width="200">
           <template #default="{ row }">
             <el-tag type="warning" class="staff-tag">{{ row.fbStaffName }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="创建时间" width="180">
+        <el-table-column prop="createdAt" :label="t('cmdb.duty.createdAt')" width="180">
           <template #default="{ row }">
             {{ formatDateTime(row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column :label="t('common.actions')" width="180" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+            <el-button link type="primary" @click="handleEdit(row)">{{ t('common.edit') }}</el-button>
+            <el-button link type="danger" @click="handleDelete(row)">{{ t('common.delete') }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -127,9 +151,9 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" @click="handleSubmit" :loading="submitting">
-          确定
+          {{ t('common.confirm') }}
         </el-button>
       </template>
     </el-dialog>
@@ -137,7 +161,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import {
@@ -151,7 +175,12 @@ import type {
   DutyScheduleCreateRequest,
   DutyScheduleUpdateRequest
 } from '../../types/cmdb'
+import { useCommon } from '../../composables/useCommon'
+import MonthCalendar from '../../components/MonthCalendar.vue'
 
+const { t } = useCommon()
+
+const viewMode = ref<'list' | 'calendar'>('calendar')
 const loading = ref(false)
 const submitting = ref(false)
 const dialogVisible = ref(false)
@@ -167,7 +196,7 @@ const filters = reactive({
 
 const pagination = reactive({
   page: 1,
-  pageSize: 20,
+  pageSize: 1000,
   total: 0
 })
 
@@ -185,7 +214,24 @@ const formRules: FormRules = {
   fbStaffName: [{ required: true, message: '请输入FB值班人员姓名', trigger: 'blur' }]
 }
 
-const dialogTitle = computed(() => (isEdit.value ? '编辑值班' : '新增值班'))
+const dialogTitle = computed(() => (isEdit.value ? t('cmdb.duty.editSchedule') : t('cmdb.duty.addSchedule')))
+
+const calendarItems = computed(() => {
+  return tableData.value.map(item => ({
+    ...item,
+    date: formatDate(item.dutyDate)
+  }))
+})
+
+watch(viewMode, (newMode) => {
+  if (newMode === 'calendar') {
+    pagination.pageSize = 1000
+    loadData()
+  } else {
+    pagination.pageSize = 20
+    loadData()
+  }
+})
 
 // 加载数据
 const loadData = async () => {
@@ -338,6 +384,12 @@ onMounted(() => {
   border-radius: var(--radius-xl);
 }
 
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
 .create-btn {
   padding: var(--spacing-md) var(--spacing-xl);
   border-radius: var(--radius-md);
@@ -350,6 +402,52 @@ onMounted(() => {
 
 .filter-card :deep(.el-card__body) {
   padding: var(--spacing-md);
+}
+
+.calendar-card {
+  border-radius: var(--radius-xl);
+}
+
+.calendar-card :deep(.el-card__body) {
+  padding: var(--spacing-md);
+}
+
+.calendar-item {
+  margin-bottom: 6px;
+  padding: 8px;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.08) 0%, rgba(64, 158, 255, 0.03) 100%);
+  border-radius: 6px;
+  border-left: 3px solid var(--el-color-primary);
+  transition: all 0.2s;
+}
+
+.calendar-item:hover {
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.12) 0%, rgba(64, 158, 255, 0.05) 100%);
+  transform: translateX(2px);
+}
+
+.duty-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.duty-row:last-child {
+  margin-bottom: 0;
+}
+
+.duty-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--el-color-primary);
+  min-width: 28px;
+}
+
+.duty-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
 }
 
 .filter-form {

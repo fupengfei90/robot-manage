@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    :title="isEdit ? '编辑任务' : '新增任务'"
+    :title="isEdit ? t('system.task.editTask') : t('system.task.addTask')"
     width="800px"
     :before-close="handleClose"
     class="task-form-dialog"
@@ -10,28 +10,28 @@
       ref="formRef"
       :model="form"
       :rules="rules"
-      label-width="100px"
+      label-width="120px"
       size="default"
     >
       <el-row :gutter="16">
         <el-col :span="12">
-          <el-form-item label="任务名称" prop="name">
+          <el-form-item :label="t('system.task.taskName')" prop="name">
             <el-input
               v-model="form.name"
-              placeholder="请输入任务名称"
+              :placeholder="t('system.task.searchPlaceholder')"
               maxlength="100"
               show-word-limit
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="任务状态" prop="active">
+          <el-form-item :label="t('system.task.status')" prop="active">
             <el-switch
               v-model="form.active"
               :active-value="1"
               :inactive-value="0"
-              active-text="启用"
-              inactive-text="停用"
+              :active-text="t('common.enabled')"
+              :inactive-text="t('common.disabled')"
             />
           </el-form-item>
         </el-col>
@@ -39,28 +39,19 @@
 
       <el-row :gutter="16">
         <el-col :span="12">
-          <el-form-item label="任务分类" prop="category">
-            <el-select
+          <el-form-item :label="t('system.task.category')" prop="category">
+            <el-input
               v-model="form.category"
-              placeholder="请选择任务分类"
-              filterable
-              allow-create
-              style="width: 100%"
-            >
-              <el-option
-                v-for="category in categories"
-                :key="category"
-                :label="getCategoryLabel(category)"
-                :value="category"
-              />
-            </el-select>
+              :placeholder="t('system.task.selectCategory')"
+              maxlength="32"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="数据中心" prop="dcn">
+          <el-form-item :label="t('system.task.dcn')" prop="dcn">
             <el-select
               v-model="form.dcn"
-              placeholder="请选择数据中心"
+              :placeholder="t('system.task.selectDCN')"
               filterable
               allow-create
               style="width: 100%"
@@ -76,32 +67,32 @@
         </el-col>
       </el-row>
 
-      <el-form-item label="Cron表达式" prop="cron">
+      <el-form-item :label="t('system.task.cronExpression')" prop="cron">
         <CronEditor v-model="form.cron" />
       </el-form-item>
 
-      <el-form-item label="工作流ID" prop="workflow">
+      <el-form-item label="Workflow ID" prop="workflow">
         <el-input
-          v-model="form.workflow"
-          placeholder="请输入工作流ID，如：bd35a471-a068-4cb1-8215-2c0003ba0382"
-          maxlength="100"
+            v-model="form.workflow"
+            placeholder="e.g., bd35a471-a068-4cb1-8215-2c0003ba0382"
+            maxlength="100"
         />
       </el-form-item>
 
-      <el-form-item label="执行Token" prop="exec_token">
+      <el-form-item label="Exec Token" prop="exec_token">
         <el-input
-          v-model="form.exec_token"
-          placeholder="请输入执行token，如：app-WGfAztV6fmzz60cZZ6p9aG74"
-          maxlength="100"
+            v-model="form.exec_token"
+            placeholder="e.g., app-WGfAztV6fmzz60cZZ6p9aG74"
+            maxlength="100"
         />
       </el-form-item>
     </el-form>
 
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose">取消</el-button>
+        <el-button @click="handleClose">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" @click="handleSubmit" :loading="loading">
-          {{ isEdit ? '更新' : '创建' }}
+          {{ isEdit ? t('common.save') : t('common.add') }}
         </el-button>
       </div>
     </template>
@@ -115,11 +106,13 @@ import CronEditor from './CronEditor.vue'
 import { 
   createScheduleTask, 
   updateScheduleTask, 
-  getScheduleTaskCategories, 
   getScheduleTaskDCNs,
   type ScheduleTask,
   type ScheduleTaskRequest 
 } from '@/api/schedule-task'
+import { useCommon } from '@/composables/useCommon'
+
+const { t } = useCommon()
 
 interface Props {
   modelValue: boolean
@@ -137,7 +130,6 @@ const emit = defineEmits<Emits>()
 const visible = ref(false)
 const loading = ref(false)
 const formRef = ref<FormInstance>()
-const categories = ref<string[]>([])
 const dcns = ref<string[]>([])
 
 const isEdit = ref(false)
@@ -154,39 +146,28 @@ const form = reactive<ScheduleTaskRequest>({
 
 const rules: FormRules = {
   name: [
-    { required: true, message: '请输入任务名称', trigger: 'blur' },
-    { max: 100, message: '任务名称不能超过100个字符', trigger: 'blur' }
+    { required: true, message: 'Please enter task name', trigger: 'blur' },
+    { max: 100, message: 'Task name cannot exceed 100 characters', trigger: 'blur' }
   ],
   cron: [
-    { required: true, message: '请输入cron表达式', trigger: 'blur' }
+    { required: true, message: 'Please enter cron expression', trigger: 'blur' }
   ],
   workflow: [
-    { required: true, message: '请输入工作流ID', trigger: 'blur' },
-    { max: 100, message: '工作流ID不能超过100个字符', trigger: 'blur' }
+    { required: true, message: 'Please enter workflow ID', trigger: 'blur' },
+    { max: 100, message: 'Workflow ID cannot exceed 100 characters', trigger: 'blur' }
   ],
   exec_token: [
-    { required: true, message: '请输入执行token', trigger: 'blur' },
-    { max: 100, message: '执行token不能超过100个字符', trigger: 'blur' }
+    { required: true, message: 'Please enter exec token', trigger: 'blur' },
+    { max: 100, message: 'Exec token cannot exceed 100 characters', trigger: 'blur' }
   ],
   category: [
-    { required: true, message: '请选择任务分类', trigger: 'change' },
-    { max: 32, message: '任务分类不能超过32个字符', trigger: 'blur' }
+    { required: true, message: 'Please select category', trigger: 'change' },
+    { max: 32, message: 'Category cannot exceed 32 characters', trigger: 'blur' }
   ],
   dcn: [
-    { required: true, message: '请选择数据中心', trigger: 'change' },
-    { max: 100, message: '数据中心不能超过100个字符', trigger: 'blur' }
+    { required: true, message: 'Please select DCN', trigger: 'change' },
+    { max: 100, message: 'DCN cannot exceed 100 characters', trigger: 'blur' }
   ]
-}
-
-// 分类标签映射
-const categoryLabels: Record<string, string> = {
-  'rota': '值班提醒',
-  'weekly-report': '周报生成',
-  'version-align': '版本通知'
-}
-
-const getCategoryLabel = (category: string) => {
-  return categoryLabels[category] || category
 }
 
 // 监听显示状态
@@ -246,10 +227,10 @@ const handleSubmit = async () => {
     
     if (isEdit.value && props.task) {
       await updateScheduleTask(props.task.id, form)
-      ElMessage.success('任务更新成功')
+      ElMessage.success(t('common.saveSuccess'))
     } else {
       await createScheduleTask(form)
-      ElMessage.success('任务创建成功')
+      ElMessage.success(t('common.operationSuccess'))
     }
     
     visible.value = false
@@ -261,14 +242,10 @@ const handleSubmit = async () => {
   }
 }
 
-// 加载分类和数据中心
+// 加载数据中心
 const loadOptions = async () => {
   try {
-    const [categoriesRes, dcnsRes] = await Promise.all([
-      getScheduleTaskCategories(),
-      getScheduleTaskDCNs()
-    ])
-    categories.value = categoriesRes.data
+    const dcnsRes = await getScheduleTaskDCNs()
     dcns.value = dcnsRes.data
   } catch (error) {
     console.error('加载选项失败:', error)

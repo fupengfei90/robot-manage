@@ -41,22 +41,27 @@ func (r *DashboardRepository) FetchSummary() (*model.DashboardSummary, error) {
 		yearAgo := now.AddDate(-1, 0, 0).Format("2006-01-02")
 
 		var dailyCount, weeklyCount, monthlyCount, yearlyCount int64
-		tx.Table("wecom_message_records").Where("DATE(created_at) = ? AND (is_valid = 1 OR is_valid IS NULL)", today).Count(&dailyCount)
-		tx.Table("wecom_message_records").Where("DATE(created_at) >= ? AND (is_valid = 1 OR is_valid IS NULL)", weekAgo).Count(&weeklyCount)
-		tx.Table("wecom_message_records").Where("DATE(created_at) >= ? AND (is_valid = 1 OR is_valid IS NULL)", monthAgo).Count(&monthlyCount)
-		tx.Table("wecom_message_records").Where("DATE(created_at) >= ? AND (is_valid = 1 OR is_valid IS NULL)", yearAgo).Count(&yearlyCount)
+		tx.Table("wecom_message_records").Where("msg_id NOT LIKE ? AND DATE(created_at) = ? AND (is_valid = 1 OR is_valid IS NULL)", "test-%", today).Count(&dailyCount)
+		tx.Table("wecom_message_records").Where("msg_id NOT LIKE ? AND DATE(created_at) >= ? AND (is_valid = 1 OR is_valid IS NULL)", "test-%", weekAgo).Count(&weeklyCount)
+		tx.Table("wecom_message_records").Where("msg_id NOT LIKE ? AND DATE(created_at) >= ? AND (is_valid = 1 OR is_valid IS NULL)", "test-%", monthAgo).Count(&monthlyCount)
+		tx.Table("wecom_message_records").Where("msg_id NOT LIKE ? AND DATE(created_at) >= ? AND (is_valid = 1 OR is_valid IS NULL)", "test-%", yearAgo).Count(&yearlyCount)
 
 		summary.ServiceCounts["daily"] = int(dailyCount)
 		summary.ServiceCounts["weekly"] = int(weeklyCount)
 		summary.ServiceCounts["monthly"] = int(monthlyCount)
 		summary.ServiceCounts["yearly"] = int(yearlyCount)
-		
+
 		// 统计最近7天的用户服务和定时任务分类
 		var weeklyUserService, weeklyScheduledTask int64
-		tx.Table("wecom_message_records").Where("DATE(created_at) >= ? AND (type IS NULL OR type != 'scheduled_task') AND (is_valid = 1 OR is_valid IS NULL)", weekAgo).Count(&weeklyUserService)
-		tx.Table("wecom_message_records").Where("DATE(created_at) >= ? AND type = 'scheduled_task' AND (is_valid = 1 OR is_valid IS NULL)", weekAgo).Count(&weeklyScheduledTask)
+		tx.Table("wecom_message_records").Where("msg_id NOT LIKE ? AND DATE(created_at) >= ? AND (type IS NULL OR type != 'scheduled_task') AND (is_valid = 1 OR is_valid IS NULL)", "test-%", weekAgo).Count(&weeklyUserService)
+		tx.Table("wecom_message_records").Where("msg_id NOT LIKE ? AND DATE(created_at) >= ? AND type = 'scheduled_task' AND (is_valid = 1 OR is_valid IS NULL)", "test-%", weekAgo).Count(&weeklyScheduledTask)
 		summary.ServiceCounts["weekly_user_service"] = int(weeklyUserService)
 		summary.ServiceCounts["weekly_scheduled_task"] = int(weeklyScheduledTask)
+
+		// 统计最近7天的提单操作次数
+		var weeklyTicketCount int64
+		tx.Table("wecom_message_records").Where("msg_id NOT LIKE ? AND DATE(created_at) >= ? AND output LIKE ? AND (is_valid = 1 OR is_valid IS NULL)", "test-%", weekAgo, "%【待确认】请回复【确认】后开始自动生成提单信息%").Count(&weeklyTicketCount)
+		summary.ServiceCounts["weekly_ticket_count"] = int(weeklyTicketCount)
 
 		// 在册用户数统计，从wecom_users表获取
 		var userCount int64
@@ -66,7 +71,7 @@ func (r *DashboardRepository) FetchSummary() (*model.DashboardSummary, error) {
 
 		// 服务用户数统计，从会话记录表获取去重用户数
 		var serviceUserCount int64
-		if err := tx.Table("wecom_message_records").Distinct("request_user_id").Count(&serviceUserCount).Error; err == nil {
+		if err := tx.Table("wecom_message_records").Where("msg_id NOT LIKE ?", "test-%").Distinct("request_user_id").Count(&serviceUserCount).Error; err == nil {
 			summary.ServiceUserCount = int(serviceUserCount)
 		}
 
@@ -84,7 +89,7 @@ func (r *DashboardRepository) FetchSummary() (*model.DashboardSummary, error) {
 				SUM(CASE WHEN (type IS NULL OR type != 'scheduled_task') AND (is_valid = 1 OR is_valid IS NULL) THEN 1 ELSE 0 END) as non_task,
 				SUM(CASE WHEN type = 'scheduled_task' AND (is_valid = 1 OR is_valid IS NULL) THEN 1 ELSE 0 END) as scheduled
 			FROM wecom_message_records
-			WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+			WHERE msg_id NOT LIKE 'test-%' AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
 			GROUP BY DATE(created_at)
 			ORDER BY date ASC
 		`).Scan(&trendRows).Error; err != nil {
@@ -134,6 +139,17 @@ func (r *DashboardRepository) FetchSummary() (*model.DashboardSummary, error) {
 				summary.Alerts.Detail[row.Segment] += row.Value
 			}
 		}
+
+		// 填充周报所需字段
+		summary.WeeklyServiceCount = summary.ServiceCounts["weekly"]
+		// 统计本周的覆盖用户数
+		var weeklyServiceUsers int64
+		tx.Table("wecom_message_records").Where("msg_id NOT LIKE ? AND DATE(created_at) >= ? AND (is_valid = 1 OR is_valid IS NULL)", "test-%", weekAgo).Distinct("request_user_id").Count(&weeklyServiceUsers)
+		summary.ServiceUsers = int(weeklyServiceUsers)
+		// 统计最近7天的巡检次数
+		var weeklyInspectionCount int64
+		tx.Table("ops_inspection_trend").Where("DATE(created_at) >= ?", weekAgo).Select("COALESCE(SUM(value), 0)").Scan(&weeklyInspectionCount)
+		summary.WeeklyInspectionCount = int(weeklyInspectionCount)
 
 		return nil
 	})
@@ -278,8 +294,10 @@ func (r *DashboardRepository) FetchTimeline() (*model.TimelineInfo, error) {
 
 		// 投产计划暂时保留模拟数据，因为数据库中没有对应表
 		result.DeployPlans = []model.DeployPlan{
-			{System: "会员中心", Window: "22:00-23:00", Owner: "待定"},
-			{System: "风控引擎", Window: "23:30-00:30", Owner: "待定"},
+			{System: "Product-B-20251120", Window: "用户风险等级问题修复", Owner: "ruoxinhuang, harrischen"},
+			{System: "Product-B-20251127", Window: "对公企业网银限额清零问题修复", Owner: "yuanlinbao, fulali"},
+			{System: "Product-O-20251125", Window: "修复REDIS安全漏洞组件", Owner: "yolandawang"},
+			{System: "Product-O-20251127", Window: "资产信息管理需求", Owner: "v_alipeng, borfyqiu"},
 		}
 
 		return nil
@@ -343,8 +361,11 @@ func mockSummary() *model.DashboardSummary {
 			"monthly": 2100,
 			"yearly":  14500,
 		},
-		UserCount:        86,
-		ServiceUserCount: 52,
+		UserCount:             86,
+		ServiceUserCount:      52,
+		WeeklyServiceCount:    560,
+		ServiceUsers:          52,
+		WeeklyInspectionCount: 163,
 		ServiceTrend: model.MetricBreakdown{
 			Total:  520,
 			Trend:  []int{65, 72, 88, 91, 78, 83, 83},
@@ -369,8 +390,8 @@ func mockSummary() *model.DashboardSummary {
 func mockKnowledge() *model.KnowledgeSnapshot {
 	return &model.KnowledgeSnapshot{
 		RecentUpdates: []model.KnowledgeItem{
-			{Title: "K8s集群容量评估", Author: "OpsBot", UpdatedAt: "2025-11-18", Views: 97},
-			{Title: "零信任接入排障指南", Author: "SecTeam", UpdatedAt: "2025-11-17", Views: 142},
+			{Title: "IDP批量异常SOP", Author: "pengfeifu", UpdatedAt: "2025-11-28", Views: 97},
+			{Title: "CMDB知识库更新", Author: "交付团队", UpdatedAt: "2025-11-27", Views: 142},
 		},
 		HotTopics: []model.KnowledgeItem{
 			{Title: "数据库巡检模版", Author: "DBA", UpdatedAt: "2025-10-30", Views: 260},
@@ -390,8 +411,10 @@ func mockTimeline() *model.TimelineInfo {
 			{Time: "18:00", Title: "晚间值班交接", Level: "info"},
 		},
 		DeployPlans: []model.DeployPlan{
-			{System: "会员中心", Window: "22:00-23:00", Owner: "孙嘉"},
-			{System: "风控引擎", Window: "23:30-00:30", Owner: "赵衡"},
+			{System: "Product-B-20251120", Window: "用户风险等级问题修复", Owner: "ruoxinhuang, harrischen"},
+			{System: "Product-B-20251127", Window: "对公企业网银限额清零问题修复", Owner: "yuanlinbao, fulali"},
+			{System: "Product-O-20251125", Window: "修复REDIS安全漏洞组件", Owner: "yolandawang"},
+			{System: "Product-O-20251127", Window: "资产信息管理需求", Owner: "v_alipeng, borfyqiu"},
 		},
 	}
 }
@@ -400,15 +423,15 @@ func mockAssistant(rangeType string) *model.AssistantReport {
 	return &model.AssistantReport{
 		Range: rangeType,
 		Highlights: []string{
-			"AI巡检覆盖率达到 93% 并自动闭环 24 条告警",
-			"智能提单平均耗时缩短至 18 秒",
+			"日常巡检和服务数据上报稳定运行，11月5日成功上报约300条数据",
+			"完成富小娇能力汇报文档修改和视频反馈材料准备",
 		},
 		Risks: []string{
-			"东区机房温湿度波动需持续监控",
+			"服务次数数据异常问题需持续关注和优化",
 		},
 		NextSteps: []string{
-			"完成Hybrid云备份演练",
-			"发布RPA数字员工2.0训练计划",
+			"推进慢SQL分析功能开发",
+			"扩展富小娇能力应用到更多团队和场景",
 		},
 	}
 }

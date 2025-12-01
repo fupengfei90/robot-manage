@@ -27,6 +27,9 @@ func (r *DigitalEmployeeRepository) GetMessageRecords(query *model.MessageRecord
 
 	db := r.db.Model(&model.MessageRecord{})
 
+	// 排除测试数据
+	db = db.Where("msg_id NOT LIKE ?", "test-%")
+
 	// 条件筛选
 	if query.MsgID != "" {
 		db = db.Where("msg_id = ?", query.MsgID)
@@ -107,7 +110,7 @@ func (r *DigitalEmployeeRepository) GetMessageRecordByID(msgID string) (*model.M
 // GetMessagesByConversationID 根据会话ID获取所有消息
 func (r *DigitalEmployeeRepository) GetMessagesByConversationID(conversationID string) ([]*model.MessageRecord, error) {
 	var records []*model.MessageRecord
-	if err := r.db.Where("conversation_id = ?", conversationID).
+	if err := r.db.Where("conversation_id = ? AND msg_id NOT LIKE ?", conversationID, "test-%").
 		Order("created_at ASC").Find(&records).Error; err != nil {
 		return nil, err
 	}
@@ -153,75 +156,79 @@ func (r *DigitalEmployeeRepository) BatchUpdateDebugStatus(msgIDs []string, debu
 // GetConversationGroups 获取会话分组
 func (r *DigitalEmployeeRepository) GetConversationGroups(limit int) ([]*model.ConversationGroup, error) {
 	var groups []*model.ConversationGroup
-	
+
 	err := r.db.Model(&model.MessageRecord{}).
+		Where("msg_id NOT LIKE ?", "test-%").
 		Select("conversation_id, request_user_id, request_user_name, COUNT(*) as message_count, MIN(created_at) as first_message_at, MAX(created_at) as last_message_at").
 		Group("conversation_id, request_user_id, request_user_name").
 		Order("last_message_at DESC").
 		Limit(limit).
 		Scan(&groups).Error
-	
+
 	return groups, err
 }
 
 // GetMessageStatistics 获取会话统计
 func (r *DigitalEmployeeRepository) GetMessageStatistics() (*model.MessageStatistics, error) {
 	stats := &model.MessageStatistics{}
-	
+
 	// 总消息数
-	r.db.Model(&model.MessageRecord{}).Count(&stats.TotalMessages)
-	
+	r.db.Model(&model.MessageRecord{}).Where("msg_id NOT LIKE ?", "test-%").Count(&stats.TotalMessages)
+
 	// 总会话数
 	r.db.Model(&model.MessageRecord{}).
+		Where("msg_id NOT LIKE ?", "test-%").
 		Distinct("conversation_id").
 		Count(&stats.TotalConversations)
-	
+
 	// 总用户数
 	r.db.Model(&model.MessageRecord{}).
+		Where("msg_id NOT LIKE ?", "test-%").
 		Distinct("request_user_id").
 		Count(&stats.TotalUsers)
-	
+
 	// 调试消息数
 	r.db.Model(&model.MessageRecord{}).
-		Where("debug IS NOT NULL AND debug != ''").
+		Where("msg_id NOT LIKE ? AND debug IS NOT NULL AND debug != ''", "test-%").
 		Count(&stats.DebugMessages)
-	
+
 	// 类型分布
 	var typeDistribution []model.TypeDistribution
 	r.db.Model(&model.MessageRecord{}).
 		Select("type, COUNT(*) as count").
-		Where("type IS NOT NULL AND type != ''").
+		Where("msg_id NOT LIKE ? AND type IS NOT NULL AND type != ''", "test-%").
 		Group("type").
 		Order("count DESC").
 		Scan(&typeDistribution)
 	stats.TypeDistribution = typeDistribution
-	
+
 	// 今日消息数
 	today := time.Now().Format("2006-01-02")
 	r.db.Model(&model.MessageRecord{}).
-		Where("DATE(created_at) = ?", today).
+		Where("msg_id NOT LIKE ? AND DATE(created_at) = ?", "test-%", today).
 		Count(&stats.TodayMessages)
-	
+
 	// 最近7天趋势
 	var trendData []model.TrendDataPoint
 	r.db.Model(&model.MessageRecord{}).
 		Select("DATE(created_at) as date, COUNT(*) as count").
-		Where("created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)").
+		Where("msg_id NOT LIKE ? AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)", "test-%").
 		Group("DATE(created_at)").
 		Order("date ASC").
 		Scan(&trendData)
 	stats.TrendData = trendData
-	
+
 	// Top 10 活跃用户
 	var topUsers []model.UserActivityData
 	r.db.Model(&model.MessageRecord{}).
 		Select("request_user_id as user_id, request_user_name as user_name, COUNT(*) as count").
+		Where("msg_id NOT LIKE ?", "test-%").
 		Group("request_user_id, request_user_name").
 		Order("count DESC").
 		Limit(10).
 		Scan(&topUsers)
 	stats.TopUsers = topUsers
-	
+
 	return stats, nil
 }
 
@@ -333,35 +340,35 @@ func (r *DigitalEmployeeRepository) BatchDeleteExportRecords(ids []uint) error {
 // GetExportStatistics 获取导出统计
 func (r *DigitalEmployeeRepository) GetExportStatistics() (*model.ExportStatistics, error) {
 	stats := &model.ExportStatistics{}
-	
+
 	// 总导出数
 	r.db.Model(&model.ExportRecord{}).Count(&stats.TotalExports)
-	
+
 	// 成功数
 	r.db.Model(&model.ExportRecord{}).
 		Where("email_status = ?", "success").
 		Count(&stats.SuccessCount)
-	
+
 	// 失败数
 	r.db.Model(&model.ExportRecord{}).
 		Where("email_status = ?", "failed").
 		Count(&stats.FailedCount)
-	
+
 	// 待发送数
 	r.db.Model(&model.ExportRecord{}).
 		Where("email_status IS NULL OR email_status = '' OR email_status = 'pending'").
 		Count(&stats.PendingCount)
-	
+
 	// 成功率
 	if stats.TotalExports > 0 {
 		stats.SuccessRate = float64(stats.SuccessCount) / float64(stats.TotalExports) * 100
 	}
-	
+
 	// 总记录数
 	r.db.Model(&model.ExportRecord{}).
 		Select("COALESCE(SUM(total_records), 0)").
 		Scan(&stats.TotalRecords)
-	
+
 	// 最近7天趋势
 	var trendData []model.TrendDataPoint
 	r.db.Model(&model.ExportRecord{}).
@@ -371,6 +378,6 @@ func (r *DigitalEmployeeRepository) GetExportStatistics() (*model.ExportStatisti
 		Order("date ASC").
 		Scan(&trendData)
 	stats.TrendData = trendData
-	
+
 	return stats, nil
 }

@@ -1,0 +1,89 @@
+/* Element Plus 深色主题表格优化 */
+.dark-theme .el-table {
+  --el-table-bg-color: #1a1d28;
+  --el-table-tr-bg-color: #1a1d28;
+  --el-table-header-bg-color: #2d3746;
+  --el-table-row-hover-bg-color: rgba(255, 255, 255, 0.03);
+  --el-table-border-color: rgba(255, 255, 255, 0.08);
+  --el-table-text-color: #e2e8f0;
+  --el-table-header-text-color: #e2e8f0;
+}
+
+.dark-theme .el-table__header th {
+  background: linear-gradient(180deg, #2d3746 0%, #252a38 100%) !important;
+  color: #e2e8f0 !important;
+  font-weight: 600 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark-theme .el-table__body tr {
+  background-color: #1a1d28 !important;
+}
+
+.dark-theme .el-table__body tr:hover {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+.dark-theme .el-table--striped .el-table__body tr.el-table__row--striped {
+  background-color: #1e222d !important;
+}
+
+.dark-theme .el-table--striped .el-table__body tr.el-table__row--striped:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.dark-theme .el-table td,
+.dark-theme .el-table th {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* 深色主题输入框优化 */
+.dark-theme .el-input__wrapper {
+  background-color: rgba(30, 41, 59, 0.6) !important;
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.2) inset !important;
+}
+
+.dark-theme .el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.3) inset !important;
+}
+
+.dark-theme .el-input__inner {
+  color: #e2e8f0 !important;
+}
+
+.dark-theme .el-input__inner::placeholder {
+  color: #64748b !important;
+}
+
+/* 深色主题选择器优化 */
+.dark-theme .el-select__wrapper {
+  background-color: rgba(30, 41, 59, 0.6) !important;
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.2) inset !important;
+}
+
+.dark-theme .el-select-dropdown {
+  background-color: rgba(30, 41, 59, 0.95) !important;
+  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+}
+
+.dark-theme .el-select-dropdown__item {
+  color: #e2e8f0 !important;
+}
+
+.dark-theme .el-select-dropdown__item:hover {
+  background-color: rgba(124, 58, 237, 0.2) !important;
+}
+
+/* 深色主题日期选择器优化 */
+.dark-theme .el-date-editor {
+  --el-fill-color-blank: rgba(30, 41, 59, 0.6);
+}
+
+.dark-theme .el-picker-panel {
+  background-color: rgba(30, 41, 59, 0.95) !important;
+  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+}
+
+.dark-theme .el-date-table td.available:hover {
+  background-color: rgba(124, 58, 237, 0.2) !important;
+}

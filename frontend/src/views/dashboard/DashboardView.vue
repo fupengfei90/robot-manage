@@ -7,10 +7,10 @@
           <MetricsPanel v-if="store.summary" :summary="store.summary" />
         </div>
         <div class="dashboard__item animate-fade-in-up" style="animation-delay: 0.2s">
-          <KnowledgePanel v-if="store.knowledge" :knowledge="store.knowledge" />
+          <TimelinePanel v-if="store.timeline" :timeline="store.timeline" />
         </div>
         <div class="dashboard__item animate-fade-in-up" style="animation-delay: 0.3s">
-          <TimelinePanel v-if="store.timeline" :timeline="store.timeline" />
+          <KnowledgePanel v-if="store.knowledge" :knowledge="store.knowledge" />
         </div>
         <div class="dashboard__item animate-fade-in-up" style="animation-delay: 0.4s">
           <AssistantReport
@@ -18,9 +18,6 @@
             :report="store.assistant"
             @change-range="changeRange"
           />
-        </div>
-        <div class="dashboard__item animate-fade-in-up" style="animation-delay: 0.5s">
-          <DigitalHuman />
         </div>
       </div>
     </template>
@@ -33,7 +30,6 @@ import MetricsPanel from '../../components/dashboard/MetricsPanel.vue'
 import KnowledgePanel from '../../components/dashboard/KnowledgePanel.vue'
 import TimelinePanel from '../../components/dashboard/TimelinePanel.vue'
 import AssistantReport from '../../components/dashboard/AssistantReport.vue'
-import DigitalHuman from '../../components/dashboard/DigitalHuman.vue'
 import { useDashboardStore } from '../../stores/dashboard'
 
 const store = useDashboardStore()

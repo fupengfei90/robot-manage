@@ -105,13 +105,13 @@
    浅色主题
    ============================================ */
 :root.light-theme {
-  --bg-primary: #f8fafc;
+  --bg-primary: #f1f5f9;
   --bg-secondary: #ffffff;
-  --bg-tertiary: #f1f5f9;
-  --bg-card: rgba(255, 255, 255, 0.9);
+  --bg-tertiary: #e2e8f0;
+  --bg-card: rgba(255, 255, 255, 0.95);
   --bg-card-hover: rgba(255, 255, 255, 1);
-  --bg-glass: rgba(255, 255, 255, 0.6);
-  --bg-glass-hover: rgba(255, 255, 255, 0.8);
+  --bg-glass: rgba(248, 250, 252, 0.9);
+  --bg-glass-hover: rgba(241, 245, 249, 0.95);
   
   --text-primary: #1e293b;
   --text-secondary: #334155;
@@ -119,14 +119,14 @@
   --text-muted: #64748b;
   --text-disabled: #94a3b8;
   
-  --border-color: rgba(0, 0, 0, 0.08);
-  --border-color-hover: rgba(0, 0, 0, 0.12);
-  --border-color-active: rgba(124, 58, 237, 0.3);
+  --border-color: rgba(0, 0, 0, 0.1);
+  --border-color-hover: rgba(0, 0, 0, 0.15);
+  --border-color-active: rgba(124, 58, 237, 0.4);
   
   --gradient-primary: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
   --gradient-accent: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 50%, #a78bfa 100%);
   --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.6) 100%);
-  --gradient-bg: radial-gradient(circle at top, #e0e7ff 0%, #f8fafc 50%, #f1f5f9 100%);
+  --gradient-bg: radial-gradient(circle at top, #ddd6fe 0%, #e0e7ff 30%, #f1f5f9 100%);
   
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
